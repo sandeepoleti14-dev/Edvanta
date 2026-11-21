@@ -1,0 +1,6 @@
+{
+  "name": "ADAPTIX",
+  "description": "AI-powered adaptive examination preparation platform that tracks concept-level mastery, detects reasoning misconceptions, and personalizes revision schedules.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
