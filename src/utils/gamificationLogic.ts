@@ -10,14 +10,14 @@ export interface ActivityXpInput {
 }
 
 const LEVEL_TITLES = [
-  'Spark Apprentice',
-  'Circuit Explorer',
-  'Ohm Navigator',
-  'Current Strategist',
-  'Voltage Architect',
-  'Field Specialist',
-  'Energy Vanguard',
-  'Physics Luminary',
+  'Code Apprentice',
+  'Array Explorer',
+  'Algo Navigator',
+  'Stack Strategist',
+  'Tree Architect',
+  'Graph Explorer',
+  'Code Vanguard',
+  'DSA Luminary',
 ];
 
 export function computeActivityXp(input: ActivityXpInput): number {
@@ -79,28 +79,28 @@ export function computeCompanionTier(level: number): {
   if (level >= 7) {
     return {
       tier: 4,
-      title: 'Apex Volt',
-      unlockHint: 'Maximum evolution unlocked — Quantum crown resonance active.',
+      title: 'Code Ace',
+      unlockHint: 'Maximum companion level unlocked.',
     };
   }
   if (level >= 5) {
     return {
       tier: 3,
       title: 'Quantum Mentor',
-      unlockHint: 'Reach Level 7 to evolve Volt to Apex Volt.',
+      unlockHint: 'Reach Level 7 to evolve Byte to Code Ace.',
     };
   }
   if (level >= 3) {
     return {
       tier: 2,
       title: 'Neural Guide',
-      unlockHint: 'Reach Level 5 to evolve Volt to Quantum Mentor.',
+      unlockHint: 'Reach Level 5 to evolve Byte to Quantum Mentor.',
     };
   }
   return {
     tier: 1,
-    title: 'Scout Spark',
-    unlockHint: 'Reach Level 3 to evolve Volt to Neural Guide.',
+    title: 'Code Scout',
+    unlockHint: 'Reach Level 3 to evolve Byte to Neural Guide.',
   };
 }
 
@@ -153,7 +153,7 @@ export function buildLearningQuests(params: {
     {
       id: 'quest-syllabus-modules',
       title: 'Syllabus Explorer',
-      description: 'Finish 4 interactive Electricity chapter modules with Quick Checks.',
+      description: 'Finish 4 interactive Java DSA modules with Quick Checks.',
       progress: Math.min(params.completedModulesCount, 4),
       target: 4,
       xpReward: 120,
@@ -162,7 +162,7 @@ export function buildLearningQuests(params: {
     {
       id: 'quest-recall-deck',
       title: 'Active Recall Sprint',
-      description: 'Mark 8 flashcards as Known in the Electricity recall deck.',
+      description: 'Mark 8 flashcards as Known in the Java DSA recall deck.',
       progress: Math.min(params.knownFlashcardsCount, 8),
       target: 8,
       xpReward: 90,
@@ -171,7 +171,7 @@ export function buildLearningQuests(params: {
     {
       id: 'quest-concept-mastery',
       title: 'Misconception Buster',
-      description: 'Master at least 3 Physics concepts with 75%+ conceptual mastery.',
+      description: 'Master at least 3 Java DSA topics with 75%+ mastery.',
       progress: Math.min(params.masteredCount, 3),
       target: 3,
       xpReward: 150,

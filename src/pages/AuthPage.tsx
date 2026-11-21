@@ -17,7 +17,7 @@ export function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('student');
-  const [gradeLevel, setGradeLevel] = useState('Class 10');
+  const [gradeLevel, setGradeLevel] = useState('Java DSA');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -48,7 +48,7 @@ export function AuthPage() {
               email: email.trim(),
               password,
               role,
-              gradeLevel: gradeLevel.trim() || 'Class 10',
+              gradeLevel: gradeLevel.trim() || 'Java DSA',
             });
       showToast(`Signed in as ${signedIn.name}`, 'success');
       navigate(signedIn.role === 'teacher' ? '/teacher/overview' : '/student/dashboard');
@@ -132,7 +132,7 @@ export function AuthPage() {
             <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-1">
               {mode === 'login'
                 ? 'Continue your adaptive study plan or inspect class analytics.'
-                : 'Start with a fresh learner profile and take the Class 10 Electricity diagnostic.'}
+                : 'Start with a fresh learner profile and take the Java DSA diagnostic.'}
             </p>
 
             {errorMsg && (
@@ -187,7 +187,7 @@ export function AuthPage() {
                         type="text"
                         value={gradeLevel}
                         onChange={(e) => setGradeLevel(e.target.value)}
-                        placeholder="Class 10"
+                        placeholder="Java DSA"
                         className="w-full rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#111322] px-3.5 py-2.5 text-sm text-[#14172B] dark:text-[#F4F6FF] focus:border-[#7055F7] focus:outline-none focus:ring-2 focus:ring-[#7055F7]/20"
                       />
                     </div>
@@ -267,7 +267,7 @@ export function AuthPage() {
                     <ArrowRight className="h-4 w-4 text-[#8892B5]" aria-hidden="true" />
                   </div>
                   <p className="text-xs text-[#B4BDD9] mt-1.5">
-                    Includes baseline concept mastery, weak areas in Ohm&apos;s Law &amp; Series Circuits, and due
+                    Includes baseline topic mastery, weak areas in Arrays &amp; Hashing and Graphs, and due
                     revisions.
                   </p>
                 </button>

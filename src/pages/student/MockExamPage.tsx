@@ -219,15 +219,15 @@ export function MockExamPage() {
                 Excel Phase · Full-Syllabus Simulation + Coach AI Analysis
               </p>
               <h2 className="font-display text-2xl font-bold text-[#14172B] dark:text-[#F4F6FF]">
-                Class 10 Physics — Electricity Mock Exam
+                Java DSA Mock Exam
               </h2>
               <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] leading-relaxed">
-                Practice under real exam pacing across all 8 Electricity concepts. Includes a live countdown clock,
+                Practice under timed conditions across all 8 Java DSA topics. Includes a live countdown clock,
                 question navigation palette, mark-for-review flags, and an instant EDVANTA Coach AI Result Analysis
                 that updates your Learner Model.
               </p>
               <div className="pt-2 flex flex-wrap items-center gap-3 text-xs text-[#6E7696] dark:text-[#8892B5]">
-                <span>10 Mixed-Difficulty Questions</span>
+                <span>Up to 10 Unseen Questions</span>
                 <span aria-hidden="true">·</span>
                 <span>15:00 Countdown Timer</span>
                 <span aria-hidden="true">·</span>
@@ -435,7 +435,7 @@ export function MockExamPage() {
                   onChange={(e) =>
                     setReasonings((prev) => ({ ...prev, [activeQ.id]: e.target.value }))
                   }
-                  placeholder="Optional: e.g. Used V = I × R at constant voltage..."
+                  placeholder="Optional: e.g. Each loop halves the remaining search range..."
                   className="w-full rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#111322] px-3.5 py-2 text-sm text-[#14172B] dark:text-[#F4F6FF] placeholder:text-[#6E7696] focus:border-[#7055F7] focus:outline-none focus:ring-2 focus:ring-[#7055F7]/20"
                 />
               </div>

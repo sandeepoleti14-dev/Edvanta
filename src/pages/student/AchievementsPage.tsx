@@ -14,7 +14,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
-import { VoltMascotSvg } from '../../components/StudyCompanion';
+import { ByteMascotSvg } from '../../components/StudyCompanion';
 import { ProgressBar, SurfaceCard } from '../../components/ui/ThemePrimitives';
 import { useCompanion } from '../../context/CompanionContext';
 import { apiFetch } from '../../lib/api';
@@ -114,14 +114,14 @@ export function AchievementsPage() {
   const filtered = data.badges.filter((b) => (filter === 'all' ? true : b.category === filter));
   const companionTier = gamification?.companionTier ?? {
     tier: 1,
-    title: 'Scout Spark',
-    unlockHint: 'Reach Level 2 (200 XP) to evolve Volt to Circuit Guardian.',
+    title: 'Code Scout',
+    unlockHint: 'Reach Level 2 (200 XP) to evolve Byte to Code Guardian.',
   };
 
   return (
     <AppShell title="Streaks & Achievements">
       <div className="space-y-6">
-        {/* Top Row: Learner Level & XP + Active Streak Calendar + Volt Evolution Showcase */}
+        {/* Top Row: Learner Level & XP + Active Streak Calendar + Byte Evolution Showcase */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Learner Level & Total XP */}
           <SurfaceCard className="lg:col-span-4 p-5 flex flex-col justify-between gap-4">
@@ -207,15 +207,15 @@ export function AchievementsPage() {
             </div>
           </SurfaceCard>
 
-          {/* Volt Companion Evolution Tier & Badges Count */}
+          {/* Byte Companion Evolution Tier & Badges Count */}
           <SurfaceCard className="lg:col-span-4 p-5 flex items-center gap-4">
             <div className="h-16 w-16 rounded-2xl bg-[#EEF1FA] dark:bg-[#212640] border border-[#E2E6F3] dark:border-[#2B3150] flex items-center justify-center shrink-0">
-              <VoltMascotSvg mood="achievement" size={50} tier={companionTier.tier} />
+              <ByteMascotSvg mood="achievement" size={50} tier={companionTier.tier} />
             </div>
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-[#35C9D8]">
-                  Volt Tier {companionTier.tier} · {companionTier.title}
+                  Byte Tier {companionTier.tier} · {companionTier.title}
                 </p>
                 <span className="font-mono text-xs font-bold tabular-nums text-[#15996C] dark:text-[#27C991] shrink-0">
                   {data.unlockedCount}/{data.totalCount} Badges
@@ -418,7 +418,7 @@ export function AchievementsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 rounded-xl bg-[#EEF1FA] dark:bg-[#212640] border border-[#E2E6F3] dark:border-[#2B3150] flex items-center justify-center shrink-0">
-                    <VoltMascotSvg
+                    <ByteMascotSvg
                       mood={selectedBadge.unlocked ? 'achievement' : 'encouraging'}
                       size={40}
                       tier={companionTier.tier}

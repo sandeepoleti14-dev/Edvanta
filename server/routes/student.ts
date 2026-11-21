@@ -4,6 +4,7 @@ import { requireAuth, requireRole } from '../middleware/authMiddleware';
 import { AuthenticatedRequest } from '../utils/auth';
 import {
   buildStudentDashboard,
+  claimStudentQuestionExposure,
   completeStudentModule,
   getMockExamHistory,
   getMockExamResultById,
@@ -15,6 +16,7 @@ import {
   getStudentModules,
   getStudentRecentAttempts,
   getStudentRevisions,
+  getStudentSeenQuestionIds,
   reviewStudentFlashcard,
   saveMockExamAttempt,
   syncStudentStreakAndAchievements,
@@ -26,15 +28,16 @@ import {
   analyzeStudentReasoning,
   chatWithStudyCompanion,
   enrichMockExamCoachWithGemini,
-  generateQuestionWithGeminiResult,
 } from '../services/geminiService';
+import { areQuestionsNearDuplicates, generateFreshQuestion } from '../services/questionGenerationAgent';
 import { computeNextRevisionSchedule } from '../services/revisionScheduler';
 import {
   buildMockExamCoachAnalysis,
   ExamQuestionCandidate,
+  filterUnseenQuestions,
   selectMockExamQuestions,
 } from '../services/edurevStudyEngine';
-import { ELECTRICITY_FLASHCARDS } from '../curriculum/flashcards';
+import { DSA_FLASHCARDS } from '../curriculum/flashcards';
 import {
   AnswerEvaluationResult,
   DiagnosticSubmitResult,
@@ -58,7 +61,7 @@ studentRouter.get('/dashboard', (req: AuthenticatedRequest, res: Response) => {
     : undefined;
   const payload = buildStudentDashboard({
     ...user,
-    className: classRow?.name ?? 'Class 10 Physics — Section A',
+    className: classRow?.name ?? 'Java DSA — Section A',
   });
   res.json(payload);
 });
@@ -68,7 +71,7 @@ studentRouter.get('/concepts', (req: AuthenticatedRequest, res: Response) => {
   res.json({ concepts: masteries });
 });
 
-studentRouter.get('/diagnostic/questions', (_req: AuthenticatedRequest, res: Response) => {
+studentRouter.get('/diagnostic/questions', (req: AuthenticatedRequest, res: Response) => {
   const rows = db
     .prepare(
       `SELECT q.id, q.concept_id, c.slug as concept_slug, c.name as concept_name,
@@ -76,9 +79,17 @@ studentRouter.get('/diagnostic/questions', (_req: AuthenticatedRequest, res: Res
        FROM questions q
        JOIN concepts c ON c.id = q.concept_id
        WHERE q.is_diagnostic = 1
+         AND NOT EXISTS (
+           SELECT 1 FROM student_answers sa
+           WHERE sa.student_id = ? AND sa.question_id = q.id
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM student_question_exposures se
+           WHERE se.student_id = ? AND se.question_id = q.id
+         )
        ORDER BY c.order_index ASC, q.id ASC`
     )
-    .all() as Array<{
+    .all(req.authUser!.id, req.authUser!.id) as Array<{
     id: number;
     concept_id: number;
     concept_slug: string;
@@ -354,7 +365,7 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
     .all(studentId) as Array<{ question_id: number; concept_id: number }>;
 
   const recentConceptIds = recentAnswers.map((r) => r.concept_id);
-  const recentQuestionIds = new Set(recentAnswers.map((r) => r.question_id));
+  const seenQuestionIds = getStudentSeenQuestionIds(studentId);
 
   const target = selectAdaptiveTarget(
     masteries,
@@ -374,7 +385,7 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
     .prepare(
       `SELECT id, concept_id, difficulty, question_text, options_json, correct_index,
               explanation, expected_reasoning, misconception_indicators_json, is_diagnostic, source
-       FROM questions WHERE concept_id = ?`
+       FROM questions WHERE concept_id = ? ORDER BY id ASC`
     )
     .all(target.concept.id) as Array<{
     id: number;
@@ -391,74 +402,110 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
   }>;
 
   // Prefer unseen question matching target difficulty, or generate fresh with Gemini if requested or exhausted
-  const unseenMatchingDifficulty = existingForConcept.filter(
-    (q) => !recentQuestionIds.has(q.id) && q.difficulty === target.difficulty
-  );
+  const unseenForConcept = filterUnseenQuestions(existingForConcept, seenQuestionIds);
+  const unseenMatchingDifficulty = unseenForConcept.filter((q) => q.difficulty === target.difficulty);
 
   let chosenRow = unseenMatchingDifficulty[0];
 
   let aiNotice: string | undefined;
 
   if (generateAi || !chosenRow) {
-    const genResult = await generateQuestionWithGeminiResult({
+    const genResult = await generateFreshQuestion({
       conceptName: target.concept.name,
       conceptDescription: target.concept.description,
       keyFormula: target.concept.keyFormula,
       difficulty: target.difficulty,
       recentMisconceptions: recentMiscRows.map((m) => m.misconception_title),
-      existingQuestions: existingForConcept.map((q) => q.question_text),
+      getExistingQuestions: () =>
+        (
+          db
+            .prepare('SELECT question_text FROM questions ORDER BY id ASC')
+            .all() as Array<{ question_text: string }>
+        ).map((row) => row.question_text),
     });
 
     if (genResult.question) {
       const generated = genResult.question;
-      const insertInfo = db
-        .prepare(
-          `INSERT INTO questions (
-            concept_id, difficulty, question_text, options_json, correct_index,
-            explanation, expected_reasoning, misconception_indicators_json, is_diagnostic, source
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'gemini')`
-        )
-        .run(
-          target.concept.id,
-          target.difficulty,
-          generated.questionText,
-          JSON.stringify(generated.options),
-          generated.correctIndex,
-          generated.explanation,
-          generated.expectedReasoning,
-          JSON.stringify(generated.misconceptionIndicators)
-        );
+      const insertIfFresh = db.transaction(() => {
+        const latestQuestions = db
+          .prepare('SELECT question_text FROM questions')
+          .all() as Array<{ question_text: string }>;
+        if (latestQuestions.some((question) => areQuestionsNearDuplicates(generated.questionText, question.question_text))) {
+          return null;
+        }
 
-      chosenRow = {
-        id: Number(insertInfo.lastInsertRowid),
-        concept_id: target.concept.id,
-        difficulty: target.difficulty,
-        question_text: generated.questionText,
-        options_json: JSON.stringify(generated.options),
-        correct_index: generated.correctIndex,
-        explanation: generated.explanation,
-        expected_reasoning: generated.expectedReasoning,
-        misconception_indicators_json: JSON.stringify(generated.misconceptionIndicators),
-        is_diagnostic: 0,
-        source: 'gemini',
-      };
-    } else if (generateAi && genResult.aiNotice) {
+        const insertInfo = db
+          .prepare(
+            `INSERT INTO questions (
+              concept_id, difficulty, question_text, options_json, correct_index,
+              explanation, expected_reasoning, misconception_indicators_json, is_diagnostic, source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'gemini')`
+          )
+          .run(
+            target.concept.id,
+            target.difficulty,
+            generated.questionText,
+            JSON.stringify(generated.options),
+            generated.correctIndex,
+            generated.explanation,
+            generated.expectedReasoning,
+            JSON.stringify(generated.misconceptionIndicators)
+          );
+        return Number(insertInfo.lastInsertRowid);
+      });
+      const insertedId = insertIfFresh.immediate();
+
+      if (insertedId === null) {
+        aiNotice = 'A similar question was generated at the same time. Please request a fresh question again.';
+      } else {
+        chosenRow = {
+          id: insertedId,
+          concept_id: target.concept.id,
+          difficulty: target.difficulty,
+          question_text: generated.questionText,
+          options_json: JSON.stringify(generated.options),
+          correct_index: generated.correctIndex,
+          explanation: generated.explanation,
+          expected_reasoning: generated.expectedReasoning,
+          misconception_indicators_json: JSON.stringify(generated.misconceptionIndicators),
+          is_diagnostic: 0,
+          source: 'gemini',
+        };
+      }
+    } else if (genResult.aiNotice) {
       aiNotice = genResult.aiNotice;
     }
   }
 
   // Deterministic fallback from existing concept bank if Gemini unavailable or not needed
   if (!chosenRow) {
-    const unseenAnyDiff = existingForConcept.filter((q) => !recentQuestionIds.has(q.id));
-    chosenRow =
-      unseenAnyDiff[0] ??
-      existingForConcept.find((q) => q.difficulty === target.difficulty) ??
-      existingForConcept[0];
+    const unseenAnyDiff = unseenForConcept;
+    chosenRow = unseenAnyDiff.find((q) => q.difficulty === target.difficulty) ?? unseenAnyDiff[0];
   }
 
   if (!chosenRow) {
-    res.status(404).json({ error: 'No practice questions available for this concept.' });
+    res.status(409).json({
+      error:
+        aiNotice ??
+        'You have seen every available question for this topic. Generate a fresh question when the AI service is available.',
+    });
     return;
+  }
+
+  if (!claimStudentQuestionExposure(studentId, chosenRow.id)) {
+    const claimedFallback = existingForConcept.find(
+      (question) =>
+        question.id !== chosenRow!.id &&
+        !getStudentSeenQuestionIds(studentId).has(question.id) &&
+        claimStudentQuestionExposure(studentId, question.id)
+    );
+    if (!claimedFallback) {
+      res.status(409).json({
+        error: 'A new question was just opened in another session. Please request the next question again.',
+      });
+      return;
+    }
+    chosenRow = claimedFallback;
   }
 
   const question: Omit<QuestionItem, 'correctIndex' | 'explanation' | 'expectedReasoning'> & {
@@ -847,7 +894,7 @@ studentRouter.patch('/profile', (req: AuthenticatedRequest, res: Response) => {
 
   db.prepare(`UPDATE users SET name = ?, grade_level = ? WHERE id = ?`).run(
     cleanName,
-    cleanGrade || 'Class 10',
+    cleanGrade || 'Java DSA',
     studentId
   );
 
@@ -855,7 +902,7 @@ studentRouter.patch('/profile', (req: AuthenticatedRequest, res: Response) => {
     user: {
       ...req.authUser!,
       name: cleanName,
-      gradeLevel: cleanGrade || 'Class 10',
+      gradeLevel: cleanGrade || 'Java DSA',
     },
   });
 });
@@ -1005,7 +1052,7 @@ studentRouter.get('/flashcards', (req: AuthenticatedRequest, res: Response) => {
 
 studentRouter.post('/flashcards/:cardId/review', (req: AuthenticatedRequest, res: Response) => {
   const cardId = String(req.params.cardId || '').trim();
-  const validCard = ELECTRICITY_FLASHCARDS.some((c) => c.id === cardId);
+  const validCard = DSA_FLASHCARDS.some((c) => c.id === cardId);
   if (!validCard) {
     res.status(404).json({ error: 'Flashcard not found.' });
     return;
@@ -1022,6 +1069,7 @@ studentRouter.post('/flashcards/:cardId/review', (req: AuthenticatedRequest, res
 studentRouter.get('/mock-exam/start', (req: AuthenticatedRequest, res: Response) => {
   const studentId = req.authUser!.id;
   const masteries = getStudentConceptMasteries(studentId);
+  const seenQuestionIds = getStudentSeenQuestionIds(studentId);
   const rows = db
     .prepare(
       `SELECT q.id, q.concept_id, c.slug as concept_slug, c.name as concept_name,
@@ -1044,26 +1092,33 @@ studentRouter.get('/mock-exam/start', (req: AuthenticatedRequest, res: Response)
     expected_reasoning: string;
   }>;
 
-  const candidates: ExamQuestionCandidate[] = rows.map((r) => ({
-    id: r.id,
-    conceptId: r.concept_id,
-    conceptSlug: r.concept_slug,
-    conceptName: r.concept_name,
-    difficulty: r.difficulty,
-    questionText: r.question_text,
-    options: JSON.parse(r.options_json) as string[],
-    correctIndex: r.correct_index,
-    explanation: r.explanation,
-    expectedReasoning: r.expected_reasoning,
-  }));
+  const candidates: ExamQuestionCandidate[] = filterUnseenQuestions(rows, seenQuestionIds).map((r) => ({
+      id: r.id,
+      conceptId: r.concept_id,
+      conceptSlug: r.concept_slug,
+      conceptName: r.concept_name,
+      difficulty: r.difficulty,
+      questionText: r.question_text,
+      options: JSON.parse(r.options_json) as string[],
+      correctIndex: r.correct_index,
+      explanation: r.explanation,
+      expectedReasoning: r.expected_reasoning,
+    }));
 
   const selected = selectMockExamQuestions(candidates, masteries, 10);
+  const claimed = selected.filter((question) => claimStudentQuestionExposure(studentId, question.id));
+  if (claimed.length === 0) {
+    res.status(409).json({
+      error: 'No unseen mock-exam questions remain. Generate fresh practice questions before starting another exam.',
+    });
+    return;
+  }
   const payload: MockExamStartPayload = {
-    examTitle: 'Class 10 Physics — Electricity Full-Syllabus Mock Exam',
-    subject: 'Class 10 Physics · Chapter 12: Electricity',
+    examTitle: 'Java DSA Full-Curriculum Mock Exam',
+    subject: 'Java Data Structures & Algorithms',
     durationSeconds: 15 * 60,
-    totalQuestions: selected.length,
-    questions: selected.map((q) => ({
+    totalQuestions: claimed.length,
+    questions: claimed.map((q) => ({
       id: q.id,
       conceptId: q.conceptId,
       conceptSlug: q.conceptSlug,

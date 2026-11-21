@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Java algorithm workspace</title>
+  <desc id="desc">A dark code editor with Java syntax, algorithm notes, and a connected data-structure graph.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#161b33"/>
+      <stop offset="1" stop-color="#28204b"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#927cff"/>
+      <stop offset="1" stop-color="#44d8d1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" rx="36" fill="url(#bg)"/>
+  <circle cx="1000" cy="145" r="220" fill="#7055f7" opacity=".12"/>
+  <rect x="70" y="72" width="1060" height="616" rx="24" fill="#111629" stroke="#42496d" stroke-width="2"/>
+  <path d="M70 145h1060" stroke="#42496d" stroke-width="2"/>
+  <circle cx="108" cy="108" r="9" fill="#ff6c78"/>
+  <circle cx="140" cy="108" r="9" fill="#ffd166"/>
+  <circle cx="172" cy="108" r="9" fill="#48d6a5"/>
+  <text x="220" y="116" fill="#aeb8db" font-family="monospace" font-size="22">Solution.java</text>
+  <text x="112" y="202" fill="#727da5" font-family="monospace" font-size="20">01</text>
+  <text x="160" y="202" fill="#c792ea" font-family="monospace" font-size="22">class</text>
+  <text x="225" y="202" fill="#82aaff" font-family="monospace" font-size="22">Solution</text>
+  <text x="338" y="202" fill="#dce4ff" font-family="monospace" font-size="22">{</text>
+  <text x="112" y="250" fill="#727da5" font-family="monospace" font-size="20">02</text>
+  <text x="192" y="250" fill="#c792ea" font-family="monospace" font-size="22">int</text>
+  <text x="240" y="250" fill="#82aaff" font-family="monospace" font-size="22">binarySearch</text>
+  <text x="390" y="250" fill="#dce4ff" font-family="monospace" font-size="22">(int[] nums, int target) {</text>
+  <text x="112" y="298" fill="#727da5" font-family="monospace" font-size="20">03</text>
+  <text x="224" y="298" fill="#c792ea" font-family="monospace" font-size="22">int</text>
+  <text x="269" y="298" fill="#dce4ff" font-family="monospace" font-size="22">low = 0, high = nums.length - 1;</text>
+  <text x="112" y="346" fill="#727da5" font-family="monospace" font-size="20">04</text>
+  <text x="224" y="346" fill="#c792ea" font-family="monospace" font-size="22">while</text>
+  <text x="286" y="346" fill="#dce4ff" font-family="monospace" font-size="22">(low &lt;= high) {</text>
+  <text x="112" y="394" fill="#727da5" font-family="monospace" font-size="20">05</text>
+  <text x="258" y="394" fill="#c792ea" font-family="monospace" font-size="22">int</text>
+  <text x="302" y="394" fill="#dce4ff" font-family="monospace" font-size="22">mid = low + (high - low) / 2;</text>
+  <text x="112" y="442" fill="#727da5" font-family="monospace" font-size="20">06</text>
+  <text x="258" y="442" fill="#c792ea" font-family="monospace" font-size="22">if</text>
+  <text x="288" y="442" fill="#dce4ff" font-family="monospace" font-size="22">(nums[mid] == target) return mid;</text>
+  <text x="112" y="490" fill="#727da5" font-family="monospace" font-size="20">07</text>
+  <text x="160" y="490" fill="#dce4ff" font-family="monospace" font-size="22">}</text>
+  <text x="112" y="538" fill="#727da5" font-family="monospace" font-size="20">08</text>
+  <text x="160" y="538" fill="#c792ea" font-family="monospace" font-size="22">return</text>
+  <text x="232" y="538" fill="#f78c6c" font-family="monospace" font-size="22">-1</text>
+  <text x="265" y="538" fill="#dce4ff" font-family="monospace" font-size="22">;</text>
+  <text x="112" y="586" fill="#727da5" font-family="monospace" font-size="20">09</text>
+  <text x="160" y="586" fill="#dce4ff" font-family="monospace" font-size="22">}</text>
+  <rect x="800" y="210" width="270" height="300" rx="18" fill="#1b223b" stroke="#4d5579" stroke-width="2"/>
+  <text x="834" y="258" fill="#b9c3e6" font-family="monospace" font-size="19">SEARCH SPACE</text>
+  <path d="M850 340h170M850 390h130M850 440h82" stroke="url(#glow)" stroke-linecap="round" stroke-width="18"/>
+  <circle cx="940" cy="340" r="12" fill="#fff"/>
+  <circle cx="914" cy="390" r="12" fill="#fff"/>
+  <circle cx="890" cy="440" r="12" fill="#fff"/>
+  <text x="834" y="482" fill="#48d6a5" font-family="monospace" font-size="20">O(log N)</text>
+  <rect x="800" y="548" width="270" height="72" rx="16" fill="#272b4c"/>
+  <text x="834" y="594" fill="#dce4ff" font-family="monospace" font-size="20">Java · DSA · Practice</text>
+</svg>

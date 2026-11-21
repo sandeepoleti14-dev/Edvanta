@@ -130,7 +130,7 @@ export function DiagnosticPage() {
                 Baseline Learner Profile Generated
               </div>
               <h2 className="font-display text-2xl font-bold text-[#14172B] dark:text-[#F4F6FF] mt-1">
-                Diagnostic Complete — Class 10 Electricity
+                Diagnostic Complete — Java DSA
               </h2>
               <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-1">
                 EDVANTA evaluated your responses and calibrated mastery across all {result.totalQuestions} core
@@ -217,7 +217,7 @@ export function DiagnosticPage() {
         {/* Progress Header */}
         <SurfaceCard className="p-5">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6E7696] dark:text-[#8892B5]">
-            <span>Class 10 Physics — Electricity Baseline</span>
+            <span>Java DSA Baseline</span>
             <span className="font-mono tabular-nums font-medium text-[#14172B] dark:text-[#F4F6FF]">
               {answeredCount} of {questions.length} answered
             </span>

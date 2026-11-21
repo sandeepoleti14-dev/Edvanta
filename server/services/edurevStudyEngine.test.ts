@@ -4,6 +4,7 @@ import {
   buildMockExamCoachAnalysis,
   buildStudyJourney,
   ExamQuestionCandidate,
+  filterUnseenQuestions,
   selectMockExamQuestions,
   summarizeFlashcardDeck,
 } from './edurevStudyEngine';
@@ -45,9 +46,10 @@ function makeModule(concept: LearnerConceptMastery, completed: boolean): Learnin
     unitsNote: 'SI units',
     objectives: ['Obj 1'],
     coreExplanation: 'Explanation',
+    studyPages: [],
     workedExample: { problem: 'P', steps: ['S1'], answer: 'A' },
     misconceptionWatch: 'Watch',
-    simulatorType: 'ohms',
+    simulatorType: 'binary-search',
     quickCheck: { question: 'Q', options: ['A', 'B', 'C', 'D'], correctIndex: 0, explanation: 'Exp' },
     completed,
     completedAt: completed ? '2026-11-20T00:00:00.000Z' : null,
@@ -62,9 +64,10 @@ function makeCard(id: string, concept: LearnerConceptMastery, confidence: Flashc
     conceptId: concept.id,
     conceptSlug: concept.slug,
     conceptName: concept.name,
-    category: 'Formula',
+    category: 'Complexity',
     frontPrompt: 'Prompt',
     backAnswer: 'Answer',
+    solutionSteps: ['Step one', 'Step two'],
     formulaHint: 'Hint',
     examTip: 'Tip',
     confidence,
@@ -87,7 +90,7 @@ test('summarizeFlashcardDeck counts known, needsReview, and unreviewed cards acc
 test('buildStudyJourney computes milestone nextStepType and Up Next recommendation', () => {
   const c1 = makeConcept(1, 'electric-current', 'Electric Current', 85, 3);
   const c2 = makeConcept(2, 'potential-difference', 'Potential Difference', 70, 2);
-  const c3 = makeConcept(3, 'ohms-law', "Ohm's Law", 40, 2);
+  const c3 = makeConcept(3, 'binary-search-sorting', 'Binary Search & Sorting', 40, 2);
 
   const journey = buildStudyJourney({
     modules: [makeModule(c1, true), makeModule(c2, true), makeModule(c3, false)],
@@ -112,7 +115,7 @@ test('selectMockExamQuestions covers syllabus and prioritizes weak concepts for 
   const concepts = [
     makeConcept(1, 'electric-current', 'Electric Current', 85, 4),
     makeConcept(2, 'potential-difference', 'Potential Difference', 78, 3),
-    makeConcept(3, 'ohms-law', "Ohm's Law", 35, 2),
+    makeConcept(3, 'binary-search-sorting', 'Binary Search & Sorting', 35, 2),
   ];
 
   const questions: ExamQuestionCandidate[] = [];
@@ -131,6 +134,7 @@ test('selectMockExamQuestions covers syllabus and prioritizes weak concepts for 
         explanation: 'Exp',
         expectedReasoning: 'Reason',
       });
+
     }
   }
 
@@ -139,6 +143,14 @@ test('selectMockExamQuestions covers syllabus and prioritizes weak concepts for 
   const conceptIds = new Set(picked.map((q) => q.conceptId));
   assert.equal(conceptIds.size, 3);
   assert.ok(picked.filter((q) => q.conceptId === 3).length >= 2);
+});
+
+test('filterUnseenQuestions excludes every previously exposed question without mutating the pool', () => {
+  const questions = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  const unseen = filterUnseenQuestions(questions, new Set([2]));
+
+  assert.deepEqual(unseen, [{ id: 1 }, { id: 3 }]);
+  assert.deepEqual(questions, [{ id: 1 }, { id: 2 }, { id: 3 }]);
 });
 
 test('buildMockExamCoachAnalysis assigns readiness tier and prioritizes lowest-accuracy concepts', () => {
@@ -156,8 +168,8 @@ test('buildMockExamCoachAnalysis assigns readiness tier and prioritizes lowest-a
     },
     {
       conceptId: 3,
-      conceptName: "Ohm's Law",
-      conceptSlug: 'ohms-law',
+      conceptName: 'Binary Search & Sorting',
+      conceptSlug: 'binary-search-sorting',
       totalQuestions: 2,
       correctCount: 0,
       accuracy: 0,
@@ -175,11 +187,11 @@ test('buildMockExamCoachAnalysis assigns readiness tier and prioritizes lowest-a
     totalQuestions: 10,
     durationUsedSeconds: 540,
     conceptBreakdown: breakdown,
-    misconceptionsDetected: ['Assumes current rises with resistance'],
+    misconceptionsDetected: ['Discards the wrong half of the search space'],
   });
 
   assert.equal(analysis.readinessTier, 'Needs Focused Revision');
   assert.equal(analysis.priorityFocusConcepts[0].conceptId, 3);
   assert.ok(analysis.timeManagementNote.includes('1 question(s) remained unanswered'));
-  assert.ok(analysis.roadmapSteps.some((s) => s.includes('Assumes current rises with resistance')));
+  assert.ok(analysis.roadmapSteps.some((s) => s.includes('Discards the wrong half of the search space')));
 });

@@ -19,8 +19,6 @@ export function LandingPage() {
   const { user, demoLogin } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [heroImgError, setHeroImgError] = useState(false);
-  const [labImgError, setLabImgError] = useState(false);
   const [busyRole, setBusyRole] = useState<'student' | 'teacher' | null>(null);
 
   const handleQuickDemo = async (role: 'student' | 'teacher') => {
@@ -90,7 +88,7 @@ export function LandingPage() {
                 className="font-display font-bold tracking-tight text-[#14172B] dark:text-[#F4F6FF] leading-[1.08]"
                 style={{ fontSize: 'clamp(2.25rem, 4vw, 3.5rem)', textWrap: 'balance' }}
               >
-                Learn Smarter. Master What Matters Most.
+                Master Java DSA, One Pattern at a Time.
               </h1>
               <p className="mt-5 text-base sm:text-lg text-[#4E5674] dark:text-[#B4BDD9] leading-relaxed max-w-xl">
                 Conventional quizzes only count right or wrong answers. EDVANTA maintains a persistent
@@ -116,18 +114,13 @@ export function LandingPage() {
                 >
                   {busyRole === 'teacher' ? 'Loading Teacher Demo...' : 'Explore Teacher Dashboard'}
                 </button>
-                <Link
-                  to="/auth"
-                  className="text-sm font-medium text-[#4E5674] dark:text-[#B4BDD9] hover:text-[#14172B] dark:hover:text-white underline underline-offset-4 whitespace-nowrap"
-                >
-                  Sign in or register
-                </Link>
+
               </div>
 
               <div className="mt-10 pt-6 border-t border-[#E2E6F3] dark:border-[#2B3150] grid grid-cols-3 gap-6 max-w-lg">
                 <div>
                   <p className="font-mono text-2xl font-semibold tabular-nums text-[#14172B] dark:text-[#F4F6FF]">8</p>
-                  <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-1">Electricity concepts mapped</p>
+                  <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-1">Java DSA topics mapped</p>
                 </div>
                 <div>
                   <p className="font-mono text-2xl font-semibold tabular-nums text-[#14172B] dark:text-[#F4F6FF]">3 Tiers</p>
@@ -142,24 +135,11 @@ export function LandingPage() {
 
             <div className="lg:col-span-6 flex">
               <div className="w-full rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#14172B] overflow-hidden flex flex-col shadow-[var(--shadow-card)]">
-                {!heroImgError ? (
-                  <img
-                    src="/src/assets/images/hero_physics_studio_1795247410314.jpg"
-                    alt="Architectural electrical schematic workspace representing EDVANTA concept mastery mapping"
-                    referrerPolicy="no-referrer"
-                    onError={() => setHeroImgError(true)}
-                    className="w-full h-64 sm:h-80 lg:h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-64 sm:h-80 lg:h-full bg-gradient-to-br from-[#111322] via-[#181B2E] to-[#212640] flex items-center justify-center p-8 text-[#B4BDD9]">
-                    <div className="text-center space-y-2">
-                      <Brain className="h-10 w-10 text-[#7055F7] mx-auto" />
-                      <p className="font-display text-base font-semibold text-white">
-                        Persistent Concept Mastery Engine
-                      </p>
-                    </div>
-                  </div>
-                )}
+                <img
+                  src="/assets/java-code-workspace.svg"
+                  alt="Java code editor illustrating an overflow-safe binary search algorithm"
+                  className="w-full h-64 sm:h-80 lg:h-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -185,7 +165,7 @@ export function LandingPage() {
                   <div className="flex items-center justify-between pb-4 border-b border-[#E2E6F3] dark:border-[#2B3150]">
                     <div>
                       <h3 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                        Sample Learner Profile — Class 10 Electricity
+                        Sample Learner Profile — Java DSA
                       </h3>
                       <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5">
                         Concept mastery drives question selection and spaced-repetition intervals
@@ -198,11 +178,11 @@ export function LandingPage() {
 
                   <div className="mt-5 space-y-4">
                     {[
-                      { name: 'Electric Current', score: 84, status: 'Mastered', bar: 'bg-[#27C991]', text: 'text-[#15996C] dark:text-[#27C991]' },
-                      { name: 'Electric Power', score: 78, status: 'Mastered', bar: 'bg-[#27C991]', text: 'text-[#15996C] dark:text-[#27C991]' },
-                      { name: 'Potential Difference', score: 74, status: 'Developing', bar: 'bg-[#F6B94A]', text: 'text-[#B46E00] dark:text-[#F6B94A]' },
-                      { name: "Ohm's Law", score: 38, status: 'Weak', bar: 'bg-[#E5484D]', text: 'text-[#E5484D] dark:text-[#F87171]' },
-                      { name: 'Series Circuits', score: 34, status: 'Weak', bar: 'bg-[#E5484D]', text: 'text-[#E5484D] dark:text-[#F87171]' },
+                      { name: 'Arrays & Hashing', score: 84, status: 'Mastered', bar: 'bg-[#27C991]', text: 'text-[#15996C] dark:text-[#27C991]' },
+                      { name: 'Binary Trees & BST', score: 78, status: 'Mastered', bar: 'bg-[#27C991]', text: 'text-[#15996C] dark:text-[#27C991]' },
+                      { name: 'Binary Search & Sorting', score: 74, status: 'Developing', bar: 'bg-[#F6B94A]', text: 'text-[#B46E00] dark:text-[#F6B94A]' },
+                      { name: 'Recursion & Backtracking', score: 38, status: 'Weak', bar: 'bg-[#E5484D]', text: 'text-[#E5484D] dark:text-[#F87171]' },
+                      { name: 'Graphs & Dynamic Programming', score: 34, status: 'Weak', bar: 'bg-[#E5484D]', text: 'text-[#E5484D] dark:text-[#F87171]' },
                     ].map((row) => (
                       <div key={row.name} className="space-y-1.5">
                         <div className="flex items-center justify-between text-sm">
@@ -226,23 +206,23 @@ export function LandingPage() {
                   <div>
                     <p className="text-xs font-semibold text-[#477BFF] dark:text-[#759EFF]">Misconception Detection Sample</p>
                     <h3 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] mt-1">
-                      Ohm&apos;s Law Reasoning Check
+                      Complexity Analysis Reasoning Check
                     </h3>
                     <div className="mt-4 space-y-3 text-sm">
                       <div className="rounded-xl bg-[#EEF1FA]/70 dark:bg-[#212640] border border-[#E2E6F3] dark:border-[#2B3150] p-3">
                         <p className="text-xs font-medium text-[#6E7696] dark:text-[#8892B5]">Student written reasoning</p>
                         <p className="text-[#14172B] dark:text-[#F4F6FF] mt-1 italic">
-                          &ldquo;Current increases because resistance increases when connected to the battery.&rdquo;
+                          &ldquo;Nested loops always run in O(N²) even when the inner loop doubles j *= 2.&rdquo;
                         </p>
                       </div>
                       <div className="rounded-xl bg-[#E5484D]/8 dark:bg-[#E5484D]/12 border border-[#E5484D]/30 p-3">
                         <p className="text-xs font-semibold text-[#E5484D] dark:text-[#F87171]">Identified Misconception</p>
                         <p className="text-[#14172B] dark:text-[#F4F6FF] mt-1 font-medium">
-                          Misunderstands the inverse relationship between current and resistance.
+                          Assumes every nested loop has quadratic time complexity.
                         </p>
                         <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9] mt-1.5 leading-relaxed">
-                          Correction: At constant voltage, I = V / R means higher resistance restricts charge flow,
-                          reducing current proportionally.
+                          Correction: Count the work done by each loop. When the inner index doubles, it runs log N
+                          times, so the total is O(N log N).
                         </p>
                       </div>
                     </div>
@@ -276,7 +256,7 @@ export function LandingPage() {
             {[
               {
                 num: '01. Baseline Diagnostic',
-                desc: 'Eight targeted questions map initial mastery across all Class 10 Electricity concepts and establish prerequisite baselines.',
+                desc: 'Eight targeted questions map initial mastery across all 8 Java DSA modules and establish prerequisite baselines.',
               },
               {
                 num: '02. Adaptive Questioning',
@@ -319,28 +299,20 @@ export function LandingPage() {
                   Concept Knowledge Graph & Prerequisite Tracing
                 </div>
                 <h3 className="font-display text-xl font-bold text-[#14172B] dark:text-[#F4F6FF] mt-2">
-                  Visualize mastery across connected physics principles
+                  Visualize mastery across connected Java DSA concepts
                 </h3>
                 <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-1.5">
-                  When a student struggles with Electric Power or Series Circuits, EDVANTA traces upstream
-                  prerequisites like Ohm&apos;s Law and Resistance to fix root gaps first.
+                  When a student struggles with Trees or Graphs, EDVANTA traces prerequisites such as recursion,
+                  arrays, and complexity analysis to fix root gaps first.
                 </p>
               </div>
               <div className="mt-auto px-6 pb-6">
                 <div className="rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] overflow-hidden bg-[#EEF1FA] dark:bg-[#212640] h-52">
-                  {!labImgError ? (
-                    <img
-                      src="/src/assets/images/concept_circuit_lab_1795247411273.jpg"
-                      alt="Precision circuit board drafting diagram showing electrical components"
-                      referrerPolicy="no-referrer"
-                      onError={() => setLabImgError(true)}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#6E7696] text-sm">
-                      Electricity Syllabus Concept Graph
-                    </div>
-                  )}
+                  <img
+                    src="/assets/java-dsa-map.svg"
+                    alt="Connected Java DSA learning paths for arrays, trees, graphs, heaps, and dynamic programming"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             </div>
@@ -391,7 +363,7 @@ export function LandingPage() {
               <ul className="mt-5 space-y-3 text-sm text-[#4E5674] dark:text-[#B4BDD9]">
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-4 w-4 text-[#27C991] mt-0.5 shrink-0" aria-hidden="true" />
-                  <span>Pinpoints exact sub-concepts holding back overall physics scores</span>
+                  <span>Pinpoints the Java DSA patterns holding back problem-solving progress</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <CheckCircle2 className="h-4 w-4 text-[#27C991] mt-0.5 shrink-0" aria-hidden="true" />
@@ -459,7 +431,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6E7696] dark:text-[#8892B5]">
           <EdvantaLogo variant="auto" size="sm" showTagline />
           <div className="flex items-center gap-5">
-            <span>Class 10 Physics — Electricity Curriculum</span>
+            <span>Java Data Structures &amp; Algorithms Curriculum</span>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('edvanta:replay-intro'))}

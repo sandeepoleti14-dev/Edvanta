@@ -311,13 +311,22 @@ export interface LearningModuleItem {
   unitsNote: string;
   objectives: string[];
   coreExplanation: string;
+  studyPages: StudyPage[];
   workedExample: {
     problem: string;
     steps: string[];
     answer: string;
   };
   misconceptionWatch: string;
-  simulatorType: 'current' | 'voltage' | 'ohms' | 'resistance' | 'series' | 'parallel' | 'power' | 'energy';
+  simulatorType:
+    | 'complexity'
+    | 'arrays'
+    | 'binary-search'
+    | 'recursion'
+    | 'linked-list'
+    | 'trees'
+    | 'heaps'
+    | 'graphs-dp';
   quickCheck: {
     question: string;
     options: string[];
@@ -328,6 +337,20 @@ export interface LearningModuleItem {
   completedAt: string | null;
   masteryScore: number;
   masteryStatus: MasteryStatus;
+}
+
+export interface StudyPage {
+  title: string;
+  subtitle: string;
+  sections: StudyPageSection[];
+  takeaway: string;
+}
+
+export interface StudyPageSection {
+  heading: string;
+  paragraphs: string[];
+  bullets?: string[];
+  code?: string;
 }
 
 export type CompanionMood =
@@ -360,7 +383,7 @@ export interface CompanionChatMessage {
 
 export type FlashcardConfidence = 'new' | 'review' | 'known';
 
-export type FlashcardCategory = 'Formula' | 'Law' | 'SI Units' | 'Circuit Rule' | 'Exam Trap';
+export type FlashcardCategory = 'Java' | 'Complexity' | 'Pattern' | 'Data Structure' | 'Pitfall';
 
 export interface FlashcardItem {
   id: string;
@@ -370,6 +393,7 @@ export interface FlashcardItem {
   category: FlashcardCategory;
   frontPrompt: string;
   backAnswer: string;
+  solutionSteps: string[];
   formulaHint: string;
   examTip: string;
   confidence: FlashcardConfidence;

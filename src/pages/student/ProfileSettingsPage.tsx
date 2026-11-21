@@ -17,7 +17,7 @@ export function ProfileSettingsPage() {
   const { isHidden, setIsHidden } = useCompanion();
 
   const [name, setName] = useState(user?.name ?? '');
-  const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel ?? 'Class 10');
+  const [gradeLevel, setGradeLevel] = useState(user?.gradeLevel ?? 'Java DSA');
   const [saving, setSaving] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -30,7 +30,7 @@ export function ProfileSettingsPage() {
     try {
       const res = await apiFetch<{ user: AuthUser }>('/api/student/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ name: name.trim(), gradeLevel: gradeLevel.trim() || 'Class 10' }),
+        body: JSON.stringify({ name: name.trim(), gradeLevel: gradeLevel.trim() || 'Java DSA' }),
       });
       updateLocalUser({ ...user!, ...res.user });
       showToast('Profile settings saved', 'success');
@@ -104,7 +104,7 @@ export function ProfileSettingsPage() {
           </div>
         </SurfaceCard>
 
-        {/* Volt AI Companion Preferences */}
+        {/* Byte AI Companion Preferences */}
         <SurfaceCard className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#7055F7]/12 text-[#7055F7] dark:text-[#A493FF] flex items-center justify-center shrink-0">
@@ -112,12 +112,12 @@ export function ProfileSettingsPage() {
             </div>
             <div>
               <h3 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                Volt AI Study Companion
+                Byte AI Study Companion
               </h3>
               <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5">
                 {isHidden
-                  ? 'Volt is currently hidden from your workspace.'
-                  : 'Volt accompanies your practice sessions and celebrates milestones.'}
+                  ? 'Byte is currently hidden from your workspace.'
+                  : 'Byte accompanies your practice sessions and celebrates milestones.'}
               </p>
             </div>
           </div>
@@ -126,12 +126,12 @@ export function ProfileSettingsPage() {
             onClick={() => {
               const next = !isHidden;
               setIsHidden(next);
-              showToast(next ? 'Volt companion hidden' : 'Volt companion restored', 'info');
+              showToast(next ? 'Byte companion hidden' : 'Byte companion restored', 'info');
             }}
             className="inline-flex items-center gap-2 rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#212640] hover:bg-[#EEF1FA] dark:hover:bg-[#272D4B] px-4 py-2 text-xs font-semibold text-[#14172B] dark:text-[#F4F6FF] shrink-0 transition-colors"
           >
             {isHidden ? <Eye className="h-4 w-4 text-[#27C991]" /> : <EyeOff className="h-4 w-4 text-[#6E7696]" />}
-            {isHidden ? 'Show Volt' : 'Hide Volt'}
+            {isHidden ? 'Show Byte' : 'Hide Byte'}
           </button>
         </SurfaceCard>
 
@@ -205,7 +205,7 @@ export function ProfileSettingsPage() {
               Diagnostic Recalibration
             </h3>
             <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-1">
-              Retake the 8-question Class 10 Electricity diagnostic to refresh your concept mastery baseline.
+              Retake the 8-question Java DSA diagnostic to refresh your topic mastery baseline.
             </p>
           </div>
           <Link

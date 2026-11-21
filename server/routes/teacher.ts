@@ -176,7 +176,7 @@ teacherRouter.get('/overview', (req: AuthenticatedRequest, res: Response) => {
     .all() as Array<{ day: string; avg_mastery: number; total: number; corr: number }>;
 
   const payload: TeacherOverviewPayload = {
-    className: classRow?.name ?? 'Class 10 Physics — Section A',
+    className: classRow?.name ?? 'Java DSA — Section A',
     totalStudents: students.length,
     averageClassMastery: students.length > 0 ? Math.round(sumMastery / students.length) : 0,
     averageAccuracy: totalAttemptsAll > 0 ? Math.round((totalCorrectAll / totalAttemptsAll) * 100) : 0,
@@ -305,6 +305,6 @@ teacherRouter.get('/reports/csv', (_req: AuthenticatedRequest, res: Response) =>
   ];
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="edvanta-class10-electricity-report.csv"');
+  res.setHeader('Content-Disposition', 'attachment; filename="edvanta-java-dsa-report.csv"');
   res.send(lines.join('\n'));
 });

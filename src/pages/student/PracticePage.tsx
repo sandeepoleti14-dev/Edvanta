@@ -51,10 +51,13 @@ export function PracticePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [evaluation, setEvaluation] = useState<AnswerEvaluationResult | null>(null);
+  const [questionError, setQuestionError] = useState<string | null>(null);
 
   const loadQuestion = useCallback(
     async (opts?: { conceptId?: string | null; generateAi?: boolean }) => {
       setLoading(true);
+      setQuestion(null);
+      setQuestionError(null);
       setEvaluation(null);
       setSelectedIndex(null);
       setReasoning('');
@@ -75,7 +78,9 @@ export function PracticePage() {
           showToast(res.aiNotice, 'info');
         }
       } catch (err) {
-        showToast(err instanceof Error ? err.message : 'Unable to load adaptive question.', 'error');
+        const message = err instanceof Error ? err.message : 'Unable to load adaptive question.';
+        setQuestionError(message);
+        showToast(message, 'error');
       } finally {
         setLoading(false);
       }
@@ -158,7 +163,9 @@ export function PracticePage() {
           <div className="h-80 rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] animate-pulse" />
         ) : !question ? (
           <SurfaceCard className="p-8 text-center">
-            <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9]">No question available right now.</p>
+            <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9]">
+              {questionError ?? 'No question available right now.'}
+            </p>
             <button
               type="button"
               onClick={() => loadQuestion()}
@@ -199,7 +206,7 @@ export function PracticePage() {
             {/* Question Card */}
             <SurfaceCard className="p-6 sm:p-8 space-y-6">
               <div className="flex items-center justify-between text-xs text-[#6E7696] dark:text-[#8892B5]">
-                <span>{question.source === 'gemini' ? 'AI-Generated Adaptive Item' : 'Curated Physics Item'}</span>
+                <span>{question.source === 'gemini' ? 'AI-Generated Adaptive Item' : 'Curated Java DSA Item'}</span>
                 {revisionIdParam && (
                   <span className="font-semibold text-[#7055F7] dark:text-[#A493FF]">Scheduled Revision Review</span>
                 )}
@@ -271,7 +278,7 @@ export function PracticePage() {
                       rows={3}
                       value={reasoning}
                       onChange={(e) => setReasoning(e.target.value)}
-                      placeholder="Example: Because resistance increased while voltage stayed constant, current..."
+                      placeholder="Example: Each iteration halves the sorted search range, so..."
                       className="w-full rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#111322] px-3.5 py-2.5 text-sm text-[#14172B] dark:text-[#F4F6FF] placeholder:text-[#6E7696] focus:border-[#7055F7] focus:outline-none focus:ring-2 focus:ring-[#7055F7]/20"
                     />
                   </div>

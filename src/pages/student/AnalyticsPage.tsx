@@ -74,7 +74,7 @@ export function AnalyticsPage() {
                 Concept Mastery Breakdown
               </h2>
               <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5 mb-4">
-                Persisted mastery percentage across all 8 Electricity concepts
+                Persisted mastery percentage across all 8 Java DSA topics
               </p>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">

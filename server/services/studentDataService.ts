@@ -23,8 +23,9 @@ import { db, initializeStudentMasteryRows } from '../db/database';
 import { computeOverallMastery } from './learnerModel';
 import { resolveRevisionStatus } from './revisionScheduler';
 import { computeUpdatedStreak, evaluateAchievements } from './achievementsEngine';
-import { ELECTRICITY_MODULES } from '../curriculum/modules';
-import { ELECTRICITY_FLASHCARDS } from '../curriculum/flashcards';
+import { DSA_MODULES } from '../curriculum/modules';
+import { DSA_STUDY_PAGES } from '../curriculum/studyPages';
+import { DSA_FLASHCARDS } from '../curriculum/flashcards';
 import { buildStudyJourney, summarizeFlashcardDeck } from './edurevStudyEngine';
 import {
   buildLearningQuests,
@@ -318,7 +319,7 @@ export function buildStudentDashboard(user: AuthUser): StudentDashboardPayload {
   if (!hasCompletedDiagnostic) {
     recommendedActivity = {
       type: 'diagnostic',
-      title: 'Start Electricity Diagnostic Assessment',
+      title: 'Start Java DSA Diagnostic',
       description: 'Complete 8 baseline questions so EDVANTA can map your strengths and pinpoint conceptual gaps.',
       targetPath: '/student/diagnostic',
     };
@@ -345,7 +346,7 @@ export function buildStudentDashboard(user: AuthUser): StudentDashboardPayload {
     recommendedActivity = {
       type: 'practice',
       title: 'Advance to High-Difficulty Mastery Drill',
-      description: 'Challenge your conceptual mastery across multi-step Electricity problems.',
+      description: 'Challenge your Java DSA mastery with multi-step algorithm problems.',
       targetPath: '/student/practice',
     };
   }
@@ -642,7 +643,7 @@ export function getStudentModules(studentId: number): LearningModuleItem[] {
     .all(studentId) as Array<{ concept_id: number; completed: number; completed_at: string | null }>;
   const progressMap = new Map(progressRows.map((p) => [p.concept_id, p]));
 
-  return ELECTRICITY_MODULES.map((mod) => {
+  return DSA_MODULES.map((mod) => {
     const concept = masteryBySlug.get(mod.conceptSlug);
     const conceptId = concept?.id ?? mod.orderIndex;
     const prog = progressMap.get(conceptId);
@@ -658,6 +659,7 @@ export function getStudentModules(studentId: number): LearningModuleItem[] {
       unitsNote: mod.unitsNote,
       objectives: mod.objectives,
       coreExplanation: mod.coreExplanation,
+      studyPages: DSA_STUDY_PAGES[mod.conceptSlug] ?? [],
       workedExample: mod.workedExample,
       misconceptionWatch: mod.misconceptionWatch,
       simulatorType: mod.simulatorType,
@@ -718,7 +720,7 @@ export function getStudentFlashcards(studentId: number): FlashcardsPayload {
   }>;
   const progMap = new Map(progressRows.map((p) => [p.card_id, p]));
 
-  const cards: FlashcardItem[] = ELECTRICITY_FLASHCARDS.map((seed) => {
+  const cards: FlashcardItem[] = DSA_FLASHCARDS.map((seed) => {
     const concept = bySlug.get(seed.conceptSlug);
     const prog = progMap.get(seed.id);
     return {
@@ -729,6 +731,7 @@ export function getStudentFlashcards(studentId: number): FlashcardsPayload {
       category: seed.category,
       frontPrompt: seed.frontPrompt,
       backAnswer: seed.backAnswer,
+      solutionSteps: seed.solutionSteps,
       formulaHint: seed.formulaHint,
       examTip: seed.examTip,
       confidence: prog?.confidence ?? 'new',
@@ -741,6 +744,25 @@ export function getStudentFlashcards(studentId: number): FlashcardsPayload {
     cards,
     stats: summarizeFlashcardDeck(cards),
   };
+}
+
+export function getStudentSeenQuestionIds(studentId: number): Set<number> {
+  const rows = db
+    .prepare(
+      `SELECT question_id FROM student_question_exposures WHERE student_id = ?
+       UNION
+       SELECT question_id FROM student_answers WHERE student_id = ?`
+    )
+    .all(studentId, studentId) as Array<{ question_id: number }>;
+
+  return new Set(rows.map((row) => row.question_id));
+}
+
+export function claimStudentQuestionExposure(studentId: number, questionId: number): boolean {
+  const result = db
+    .prepare('INSERT OR IGNORE INTO student_question_exposures (student_id, question_id) VALUES (?, ?)')
+    .run(studentId, questionId);
+  return result.changes === 1;
 }
 
 export function reviewStudentFlashcard(

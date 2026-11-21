@@ -118,7 +118,7 @@ export function AppShell({
               {roleLabel}
             </p>
             <p className="text-sm font-medium text-[#14172B] dark:text-[#F4F6FF] truncate mt-0.5">
-              {user.className || 'Class 10 Physics'}
+              {user.className || 'Java DSA Cohort'}
             </p>
           </div>
         )}
@@ -216,7 +216,7 @@ export function AppShell({
             </button>
             <div className="flex items-center gap-2 text-sm min-w-0">
               <span className="hidden xl:inline text-[#6E7696] dark:text-[#8892B5] whitespace-nowrap">
-                {user.role === 'teacher' ? 'Teacher' : 'Class 10 Electricity'}
+                {user.role === 'teacher' ? 'Teacher' : 'Java DSA'}
               </span>
               <ChevronRight className="hidden xl:inline h-4 w-4 text-[#6E7696] shrink-0" aria-hidden="true" />
               <h1 className="font-display text-sm sm:text-lg font-semibold text-[#14172B] dark:text-[#F4F6FF] truncate">
@@ -231,7 +231,7 @@ export function AppShell({
             {user.role === 'student' && isHidden && (
               <button
                 type="button"
-                aria-label="Show Volt study companion"
+                aria-label="Show Byte study companion"
                 onClick={() => {
                   setIsHidden(false);
                   setIsOpen(true);
@@ -239,7 +239,7 @@ export function AppShell({
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#EEF1FA]/70 dark:bg-[#212640] hover:bg-[#E2E6F3] dark:hover:bg-[#272D4B] px-2.5 py-1.5 text-xs font-medium text-[#7055F7] dark:text-[#A493FF] whitespace-nowrap transition-colors"
               >
                 <Bot className="h-3.5 w-3.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Show Volt</span>
+                <span className="hidden sm:inline">Show Byte</span>
               </button>
             )}
 

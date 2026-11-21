@@ -15,7 +15,7 @@ import {
 import { useCompanion } from '../context/CompanionContext';
 import { CompanionAction, CompanionMood } from '../../shared/types';
 
-export function VoltMascotSvg({
+export function ByteMascotSvg({
   mood,
   size = 44,
   tier = 1,
@@ -26,14 +26,14 @@ export function VoltMascotSvg({
 }) {
   const animClass =
     mood === 'thinking'
-      ? 'volt-anim-thinking'
+      ? 'byte-anim-thinking'
       : mood === 'welcome'
-      ? 'volt-anim-welcome'
+      ? 'byte-anim-welcome'
       : mood === 'celebrating' || mood === 'achievement' || mood === 'streak' || mood === 'mastered'
-      ? 'volt-anim-celebrating'
+      ? 'byte-anim-celebrating'
       : mood === 'encouraging'
-      ? 'volt-anim-encouraging'
-      : 'volt-anim-idle';
+      ? 'byte-anim-encouraging'
+      : 'byte-anim-idle';
 
   const visorAccent =
     mood === 'celebrating' || mood === 'mastered'
@@ -60,7 +60,7 @@ export function VoltMascotSvg({
       {(mood === 'celebrating' || mood === 'mastered') && (
         <span
           aria-hidden="true"
-          className="volt-sparkle-pop absolute -top-2 -right-1 text-[#27C991] pointer-events-none"
+          className="byte-sparkle-pop absolute -top-2 -right-1 text-[#27C991] pointer-events-none"
         >
           <Sparkles className="h-4 w-4" />
         </span>
@@ -68,7 +68,7 @@ export function VoltMascotSvg({
       {mood === 'achievement' && (
         <span
           aria-hidden="true"
-          className="volt-sparkle-pop absolute -top-2 -right-1 text-[#F6B94A] pointer-events-none"
+          className="byte-sparkle-pop absolute -top-2 -right-1 text-[#F6B94A] pointer-events-none"
         >
           <Award className="h-4 w-4" />
         </span>
@@ -76,14 +76,14 @@ export function VoltMascotSvg({
       {mood === 'streak' && (
         <span
           aria-hidden="true"
-          className="volt-sparkle-pop absolute -top-2 -right-1 text-[#F6B94A] pointer-events-none"
+          className="byte-sparkle-pop absolute -top-2 -right-1 text-[#F6B94A] pointer-events-none"
         >
           <Flame className="h-4 w-4" />
         </span>
       )}
       <svg viewBox="0 0 64 64" width={size} height={size} className={animClass} aria-hidden="true">
         <defs>
-          <linearGradient id="volt-edvanta-ring" x1="8" y1="45" x2="56" y2="22" gradientUnits="userSpaceOnUse">
+          <linearGradient id="byte-edvanta-ring" x1="8" y1="45" x2="56" y2="22" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#7055F7" />
             <stop offset="50%" stopColor="#477BFF" />
             <stop offset="100%" stopColor="#35C9D8" />
@@ -115,7 +115,7 @@ export function VoltMascotSvg({
           rx="26"
           ry="10"
           fill="none"
-          stroke="url(#volt-edvanta-ring)"
+          stroke="url(#byte-edvanta-ring)"
           strokeOpacity={tier >= 2 ? '0.75' : '0.45'}
           strokeWidth={tier >= 2 ? '2.5' : '2'}
           transform="rotate(-14 32 35)"
@@ -195,7 +195,7 @@ const MOOD_LABELS: Record<CompanionMood, string> = {
 const DEFAULT_PROMPTS = [
   'What should I study next?',
   'Check my badges & streak',
-  'Solve I for 12V and 4 ohms',
+  'Explain binary search complexity',
 ];
 
 export function StudyCompanion() {
@@ -275,7 +275,7 @@ export function StudyCompanion() {
       {/* Expandable Companion Chat Drawer */}
       {isOpen && (
         <section
-          aria-label="Volt Study Companion Chat"
+          aria-label="Byte Java DSA Study Companion Chat"
           className="pointer-events-auto w-[min(400px,calc(100vw-2rem))] rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] shadow-[var(--shadow-float)] flex flex-col overflow-hidden"
           style={{ maxHeight: 'min(540px, calc(100vh - 6.5rem))' }}
         >
@@ -283,12 +283,12 @@ export function StudyCompanion() {
           <div className="flex items-center justify-between gap-3 bg-[#14172B] dark:bg-[#0D1020] px-4 py-3 text-white border-b border-[#2B3150]">
             <div className="flex items-center gap-3 min-w-0">
               <div className="rounded-xl bg-[#212640] p-1 shrink-0">
-                <VoltMascotSvg mood={mood} size={38} tier={companionTier.tier} />
+                <ByteMascotSvg mood={mood} size={38} tier={companionTier.tier} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h2 className="font-display text-sm font-semibold text-white truncate">
-                    Volt · {companionTier.title}
+                    Byte · {companionTier.title}
                   </h2>
                 </div>
                 <p className="text-xs text-[#B4BDD9] truncate font-friendly">
@@ -311,7 +311,7 @@ export function StudyCompanion() {
                 type="button"
                 onClick={() => setIsHidden(true)}
                 aria-label="Hide study companion"
-                title="Hide Volt (can re-enable in header or Settings)"
+                title="Hide Byte (can re-enable in header or Settings)"
                 className="rounded-lg p-1.5 text-[#B4BDD9] hover:bg-[#212640] hover:text-white transition-colors"
               >
                 <EyeOff className="h-4 w-4" />
@@ -364,7 +364,7 @@ export function StudyCompanion() {
             {sending && (
               <div className="flex justify-start">
                 <div className="rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] px-3.5 py-2.5 text-xs text-[#4E5674] dark:text-[#B4BDD9] font-friendly">
-                  Volt is checking your workspace &amp; Electricity notes...
+                  Byte is checking your workspace &amp; Java DSA notes...
                 </div>
               </div>
             )}
@@ -395,14 +395,14 @@ export function StudyCompanion() {
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Ask Volt about formulas or circuits..."
-              aria-label="Ask Volt a Physics question"
+              placeholder="Ask Byte about Java DSA..."
+              aria-label="Ask Byte a Java DSA question"
               className="flex-1 rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#111322] px-3 py-2 text-xs sm:text-sm text-[#14172B] dark:text-[#F4F6FF] placeholder:text-[#6E7696] focus:border-[#7055F7] focus:outline-none focus:ring-2 focus:ring-[#7055F7]/20"
             />
             <button
               type="submit"
               disabled={sending || !draft.trim()}
-              aria-label="Send message to Volt"
+              aria-label="Send message to Byte"
               className="rounded-xl bg-[#7055F7] hover:bg-[#5D42E6] p-2.5 text-white transition-colors disabled:opacity-50 shrink-0"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
@@ -417,8 +417,8 @@ export function StudyCompanion() {
           <button
             type="button"
             onClick={() => setIsHidden(true)}
-            aria-label="Hide Volt companion"
-            title="Hide Volt"
+            aria-label="Hide Byte companion"
+            title="Hide Byte"
             className="rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] p-2.5 text-[#6E7696] hover:text-[#14172B] dark:hover:text-white shadow-[var(--shadow-card)] transition-colors"
           >
             <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
@@ -428,13 +428,13 @@ export function StudyCompanion() {
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
-          aria-label={isOpen ? 'Minimize Volt Study Companion' : 'Open Volt Study Companion'}
+          aria-label={isOpen ? 'Minimize Byte Study Companion' : 'Open Byte Study Companion'}
           className="flex items-center gap-2.5 rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] hover:bg-[#F2F4FB] dark:hover:bg-[#212640] px-3 py-2 shadow-[var(--shadow-float)] transition-colors"
         >
-          <VoltMascotSvg mood={mood} size={36} tier={companionTier.tier} />
+          <ByteMascotSvg mood={mood} size={36} tier={companionTier.tier} />
           <div className="text-left pr-1">
             <p className="font-display text-xs font-semibold text-[#14172B] dark:text-[#F4F6FF] flex items-center gap-1.5 whitespace-nowrap">
-              <span>Ask Volt</span>
+              <span>Ask Byte</span>
               <MessageSquare className="h-3.5 w-3.5 text-[#7055F7]" aria-hidden="true" />
             </p>
             <p className="text-[11px] text-[#4E5674] dark:text-[#B4BDD9] leading-tight font-friendly whitespace-nowrap">

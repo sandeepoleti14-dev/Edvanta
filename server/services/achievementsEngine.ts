@@ -13,7 +13,7 @@ export const ACHIEVEMENT_CATALOG: AchievementDefinition[] = [
   {
     id: 'first_diagnostic',
     title: 'Baseline Calibrated',
-    description: 'Complete the Class 10 Electricity diagnostic assessment to initialize your learner profile.',
+    description: 'Complete the Java DSA diagnostic to initialize your learner profile.',
     category: 'consistency',
     xpReward: 100,
     target: 1,
@@ -29,7 +29,7 @@ export const ACHIEVEMENT_CATALOG: AchievementDefinition[] = [
   {
     id: 'streak_5',
     title: 'Consistent Scholar',
-    description: 'Sustain a 5-day daily study streak across Electricity topics.',
+    description: 'Sustain a 5-day daily study streak across Java DSA topics.',
     category: 'streak',
     xpReward: 250,
     target: 5,
@@ -45,23 +45,23 @@ export const ACHIEVEMENT_CATALOG: AchievementDefinition[] = [
   {
     id: 'first_mastery',
     title: 'Concept Master',
-    description: 'Reach 75% or higher mastery on any Electricity syllabus concept.',
+    description: 'Reach 75% or higher mastery on any Java DSA topic.',
     category: 'mastery',
     xpReward: 150,
     target: 1,
   },
   {
-    id: 'circuit_architect',
-    title: 'Circuit Architect',
-    description: 'Achieve 75%+ mastery in both Series Circuits and Parallel Circuits.',
+    id: 'pattern_architect',
+    title: 'Pattern Architect',
+    description: 'Achieve 75%+ mastery in both Arrays & Hashing and Graphs & Dynamic Programming.',
     category: 'mastery',
     xpReward: 300,
     target: 2,
   },
   {
     id: 'syllabus_master',
-    title: 'Electricity Laureate',
-    description: 'Master at least 6 of the 8 Class 10 Physics Electricity concepts.',
+    title: 'DSA Laureate',
+    description: 'Master at least 6 of the 8 Java DSA topics.',
     category: 'mastery',
     xpReward: 500,
     target: 6,
@@ -85,7 +85,7 @@ export const ACHIEVEMENT_CATALOG: AchievementDefinition[] = [
   {
     id: 'syllabus_scholar',
     title: 'Syllabus Scholar',
-    description: 'Complete all 8 Electricity syllabus learning modules.',
+    description: 'Complete all 8 Java DSA learning modules.',
     category: 'curriculum',
     xpReward: 350,
     target: 8,
@@ -147,13 +147,13 @@ export function evaluateAchievements(input: AchievementEvaluationInput): {
   totalXp: number;
 } {
   const masteredCount = input.conceptMasteries.filter((c) => c.status === 'mastered').length;
-  const seriesMastered = input.conceptMasteries.some(
-    (c) => c.slug === 'series-circuits' && c.status === 'mastered'
+  const arraysMastered = input.conceptMasteries.some(
+    (c) => c.slug === 'arrays-hashing' && c.status === 'mastered'
   )
     ? 1
     : 0;
-  const parallelMastered = input.conceptMasteries.some(
-    (c) => c.slug === 'parallel-circuits' && c.status === 'mastered'
+  const graphsMastered = input.conceptMasteries.some(
+    (c) => c.slug === 'graphs-dp' && c.status === 'mastered'
   )
     ? 1
     : 0;
@@ -164,7 +164,7 @@ export function evaluateAchievements(input: AchievementEvaluationInput): {
     streak_5: Math.min(5, input.streakDays),
     streak_7: Math.min(7, input.streakDays),
     first_mastery: Math.min(1, masteredCount),
-    circuit_architect: seriesMastered + parallelMastered,
+    pattern_architect: arraysMastered + graphsMastered,
     syllabus_master: Math.min(6, masteredCount),
     misconception_buster: Math.min(1, input.resolvedMisconceptionsCount),
     module_explorer: Math.min(3, input.completedModulesCount),

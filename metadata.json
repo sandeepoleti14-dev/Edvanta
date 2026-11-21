@@ -1,6 +1,6 @@
 {
   "name": "EDVANTA",
-  "description": "Learn Smarter. Grow Further. EDVANTA is an AI-powered adaptive learning intelligence platform that tracks concept-level mastery, detects reasoning misconceptions, and personalizes revision schedules.",
+  "description": "Learn Smarter. Grow Further. EDVANTA is an AI-powered adaptive Java DSA learning platform with concept mastery tracking, reasoning feedback, and personalized revision.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

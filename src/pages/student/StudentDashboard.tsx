@@ -33,7 +33,7 @@ import {
 import { AppShell } from '../../components/AppShell';
 import { AppIcon } from '../../components/brand/EdvantaBrand';
 import { MasteryStatusText, RevisionStatusText, masteryBarColor } from '../../components/StatusIndicator';
-import { VoltMascotSvg } from '../../components/StudyCompanion';
+import { ByteMascotSvg } from '../../components/StudyCompanion';
 import { ProgressBar, SurfaceCard, useChartTheme } from '../../components/ui/ThemePrimitives';
 import { useCompanion } from '../../context/CompanionContext';
 import { apiFetch } from '../../lib/api';
@@ -138,12 +138,12 @@ export function StudentDashboard() {
   return (
     <AppShell title="Dashboard Overview">
       <div className="space-y-6">
-        {/* Welcome Banner + Volt Greeting + Recommended Activity */}
+        {/* Welcome Banner + Byte Greeting + Recommended Activity */}
         <SurfaceCard className="p-6 sm:p-7">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="flex items-start gap-4 min-w-0">
               <div className="hidden sm:flex h-14 w-14 rounded-2xl bg-[#EEF1FA] dark:bg-[#212640] border border-[#E2E6F3] dark:border-[#2B3150] items-center justify-center shrink-0">
-                <VoltMascotSvg
+                <ByteMascotSvg
                   mood="welcome"
                   size={44}
                   tier={gamification?.companionTier.tier ?? 1}
@@ -190,7 +190,7 @@ export function StudentDashboard() {
                     className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#EEF1FA]/70 dark:bg-[#212640] hover:bg-[#E2E6F3] dark:hover:bg-[#272D4B] px-4 py-2.5 text-sm font-medium text-[#14172B] dark:text-[#F4F6FF] transition-colors whitespace-nowrap"
                   >
                     <MessageSquare className="h-4 w-4 text-[#35C9D8]" aria-hidden="true" />
-                    Ask Volt
+                    Ask Byte
                   </button>
                 </>
               )}
@@ -238,7 +238,7 @@ export function StudentDashboard() {
                 <span>
                   {gamification?.xpInLevel ?? 0} / {gamification?.xpForNextLevel ?? 200} XP in level
                 </span>
-                <span>Volt Tier: {gamification?.companionTier.title ?? 'Scout Spark'}</span>
+                <span>Byte Tier: {gamification?.companionTier.title ?? 'Code Scout'}</span>
               </div>
             </div>
           </SurfaceCard>
@@ -515,7 +515,7 @@ export function StudentDashboard() {
                 <Target className="h-8 w-8 text-[#6E7696] mb-2" />
                 <p className="text-sm font-medium text-[#14172B] dark:text-[#F4F6FF]">No attempt history yet</p>
                 <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-1">
-                  Complete the Electricity diagnostic to establish your baseline trajectory.
+                  Complete the Java DSA diagnostic to establish your baseline trajectory.
                 </p>
               </div>
             ) : (
@@ -691,7 +691,7 @@ export function StudentDashboard() {
                   <span>Continue Learning</span>
                 </div>
                 <h3 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] mt-1">
-                  Class 10 Electricity Lesson Path
+                  Java DSA Learning Path
                 </h3>
                 <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9] mt-1">
                   {completedModulesCount} of {totalModulesCount} interactive modules completed with simulators and worked examples.

@@ -24,6 +24,13 @@ export interface ExamQuestionCandidate {
   expectedReasoning: string;
 }
 
+export function filterUnseenQuestions<T extends { id: number }>(
+  questions: T[],
+  seenQuestionIds: Set<number>
+): T[] {
+  return questions.filter((question) => !seenQuestionIds.has(question.id));
+}
+
 export function summarizeFlashcardDeck(cards: FlashcardItem[]): FlashcardsPayload['stats'] {
   let known = 0;
   let needsReview = 0;
@@ -150,7 +157,7 @@ export function selectMockExamQuestions(
   const chosen: ExamQuestionCandidate[] = [];
   const chosenIds = new Set<number>();
 
-  // 1. Ensure 1 calibrated question per concept across the full Class 10 Electricity syllabus
+  // 1. Ensure 1 calibrated question per concept across the full Java DSA curriculum
   for (const m of orderedMasteries) {
     const pool = byConcept.get(m.id) ?? [];
     if (pool.length === 0) continue;
@@ -216,7 +223,7 @@ export function buildMockExamCoachAnalysis(params: {
   let headline = 'Targeted Revision Needed Before Board Exam';
   if (scorePercent >= 80) {
     readinessTier = 'Exam Ready';
-    headline = 'Strong Exam Readiness Across Class 10 Electricity';
+    headline = 'Strong Java DSA Readiness';
   } else if (scorePercent >= 55) {
     readinessTier = 'Developing Momentum';
     headline = 'Solid Foundation — Close 2–3 Targeted Gaps for 85%+';
@@ -264,7 +271,7 @@ export function buildMockExamCoachAnalysis(params: {
   if (unansweredCount > 0) {
     timeManagementNote = `${unansweredCount} question(s) remained unanswered when submitted. Aim for ~60–75 seconds on MCQs and mark tricky numericals for a second pass.`;
   } else if (avgSec < 20) {
-    timeManagementNote = `Very rapid pace (${avgSec}s/question). Slow down slightly on circuit-branch and unit-conversion questions to avoid sign/reciprocal traps.`;
+    timeManagementNote = `Very rapid pace (${avgSec}s/question). Slow down on complexity analysis and edge cases to verify your approach.`;
   } else if (avgSec <= 80) {
     timeManagementNote = `Well-paced at ${avgSec}s per question (${Math.floor(durationUsedSeconds / 60)}m ${durationUsedSeconds % 60}s total), leaving safe buffer time for final verification.`;
   } else {
@@ -282,7 +289,7 @@ export function buildMockExamCoachAnalysis(params: {
   if (misconceptionsDetected.length > 0) {
     roadmapSteps.push(`Address detected reasoning trap: "${misconceptionsDetected[0]}".`);
   } else {
-    roadmapSteps.push('Use Flashcards ("Needs Review" queue) for 5 minutes to lock in units and circuit rules.');
+    roadmapSteps.push('Use the "Needs Review" flashcard queue to reinforce Java syntax and algorithm patterns.');
   }
   roadmapSteps.push('Retake a fresh Timed Mock Exam after clearing due revisions to measure score growth.');
 
@@ -299,7 +306,7 @@ export function buildMockExamCoachAnalysis(params: {
         )}m ${durationUsedSeconds % 60}s. Priority gains will come from strengthening ${formatTopicList(
           priorityFocusConcepts.map((p) => p.conceptName)
         )}.`
-      : `Excellent execution—${scorePercent}% (${correctCount}/${totalQuestions}) across all 8 Electricity concepts. Keep periodic spaced revisions active to retain mastery.`;
+      : `Excellent execution—${scorePercent}% (${correctCount}/${totalQuestions}) across all 8 Java DSA topics. Keep periodic spaced revisions active to retain mastery.`;
 
   return {
     readinessTier,

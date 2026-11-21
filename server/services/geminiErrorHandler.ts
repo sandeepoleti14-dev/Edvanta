@@ -60,20 +60,20 @@ function extractStatusCode(err: unknown, rawText: string): number | null {
 export function formatGeminiNotice(category: GeminiErrorCategory): string {
   switch (category) {
     case 'missing_key':
-      return 'Gemini API key is not configured in Settings > Secrets — using EDVANTA curated physics content.';
+      return 'Gemini API key is not configured in Settings > Secrets — using EDVANTA curated Java DSA content.';
     case 'billing_disabled':
-      return 'Live Gemini AI generation requires a billing-enabled API key in Settings > Secrets — using curated physics content.';
+      return 'Live Gemini AI generation requires a billing-enabled API key in Settings > Secrets — using curated Java DSA content.';
     case 'permission_denied':
     case 'invalid_key':
-      return 'Please check your Gemini API key in Settings > Secrets — using curated physics content in the meantime.';
+      return 'Please check your Gemini API key in Settings > Secrets — using curated Java DSA content in the meantime.';
     case 'model_not_found':
-      return 'Configured Gemini model is unavailable — using curated physics content.';
+      return 'Configured Gemini model is unavailable — using curated Java DSA content.';
     case 'rate_limited':
-      return 'Gemini AI rate limit reached — using curated physics content for now.';
+      return 'Gemini AI rate limit reached — using curated Java DSA content for now.';
     case 'transient':
     case 'unknown':
     default:
-      return 'Gemini AI is temporarily unavailable — using curated physics content.';
+      return 'Gemini AI is temporarily unavailable — using curated Java DSA content.';
   }
 }
 

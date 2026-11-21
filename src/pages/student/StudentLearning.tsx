@@ -58,7 +58,7 @@ export function StudentLearning() {
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
               <div>
                 <h2 className="font-display text-lg font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                  Class 10 Physics — Electricity Syllabus
+                  Java DSA Syllabus
                 </h2>
                 <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9]">
                   Track concept-level mastery and jump directly into targeted practice.

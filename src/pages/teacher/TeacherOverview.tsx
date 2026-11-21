@@ -97,7 +97,7 @@ export function TeacherOverview() {
             <p className="font-mono text-3xl font-semibold tabular-nums text-[#7055F7] dark:text-[#A493FF] mt-2">
               {data.averageClassMastery}%
             </p>
-            <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9] mt-1">Across 8 Electricity concepts</p>
+            <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9] mt-1">Across 8 Java DSA topics</p>
           </SurfaceCard>
 
           <SurfaceCard className="p-5">
