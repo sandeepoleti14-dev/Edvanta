@@ -38,6 +38,8 @@ export function buildAllowedRouteSet(
   const allowed = new Set<string>([
     '/student/dashboard',
     '/student/modules',
+    '/student/flashcards',
+    '/student/mock-exam',
     '/student/learning',
     '/student/diagnostic',
     '/student/practice',
@@ -50,6 +52,7 @@ export function buildAllowedRouteSet(
   for (const c of conceptMasteries) {
     allowed.add(`/student/practice?conceptId=${c.id}`);
     allowed.add(`/student/modules?conceptSlug=${c.slug}`);
+    allowed.add(`/student/flashcards?conceptSlug=${c.slug}`);
   }
   return allowed;
 }
@@ -386,6 +389,38 @@ export function buildInteractiveFallbackResponse(
       mood: 'idle',
       actions: [{ label: 'Open Concept Map', type: 'navigate', targetPath: '/student/concept-map' }],
       suggestedReplies: ['What are my weakest concepts?', 'Open Learning Modules', 'What should I do next?'],
+    };
+  }
+
+  if (q.includes('flashcard') || q.includes('flash card') || q.includes('recall') || q.includes('memorize')) {
+    return {
+      reply: matchedConcept
+        ? `Active-recall flashcards are ready for ${matchedConcept.name} (${matchedConcept.keyFormula}). Flip through definitions, SI units, and exam traps—and mark tricky cards as "Needs Review".`
+        : 'EDVANTA Flashcards cover all 24 high-yield Electricity formulas, circuit rules, and exam traps. Practice them daily to boost recall speed before mock exams!',
+      source: 'fallback',
+      mood: 'celebrating',
+      actions: [
+        {
+          label: matchedConcept ? `${matchedConcept.name} Flashcards` : 'Open Flashcard Deck',
+          type: 'navigate',
+          targetPath: matchedConcept ? `/student/flashcards?conceptSlug=${matchedConcept.slug}` : '/student/flashcards',
+        },
+        { label: 'Take Timed Mock Exam', type: 'navigate', targetPath: '/student/mock-exam' },
+      ],
+      suggestedReplies: ['Start a timed mock exam', 'Give me a formula cheat sheet', 'What should I study next?'],
+    };
+  }
+
+  if (q.includes('mock') || q.includes('exam') || q.includes('coach')) {
+    return {
+      reply: 'The Timed Mock Exam tests all 8 Class 10 Electricity concepts in a 15-minute board-style simulation with a question palette, countdown timer, and instant EDVANTA Coach AI Result Analysis.',
+      source: 'fallback',
+      mood: 'encouraging',
+      actions: [
+        { label: 'Open Mock Exam Hub', type: 'navigate', targetPath: '/student/mock-exam' },
+        { label: 'Review Flashcards First', type: 'navigate', targetPath: '/student/flashcards' },
+      ],
+      suggestedReplies: ['What are my weak concepts?', 'Open Flashcards', 'Show my due revisions'],
     };
   }
 

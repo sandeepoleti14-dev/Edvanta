@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_INTRO_TIMING,
   getIntroTiming,
+  markIntroSeenFlag,
+  readIntroSeenFlag,
   REDUCED_MOTION_TIMING,
+  resetIntroSeenFlagForTest,
   shouldPlayBrandIntro,
 } from './brandIntroLogic';
 
@@ -108,4 +111,13 @@ test('intro timing totals stay within 3-5 seconds on standard motion and fast on
   const reduced = getIntroTiming(true);
   assert.equal(reduced.totalMs, REDUCED_MOTION_TIMING.totalMs);
   assert.ok(reduced.totalMs < 1000);
+});
+
+test('in-memory intro seen flag persists across SPA navigation and resets on fresh load', () => {
+  resetIntroSeenFlagForTest();
+  assert.equal(readIntroSeenFlag(), false);
+  markIntroSeenFlag();
+  assert.equal(readIntroSeenFlag(), true);
+  resetIntroSeenFlagForTest();
+  assert.equal(readIntroSeenFlag(), false);
 });

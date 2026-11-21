@@ -18,10 +18,18 @@ import {
   ChevronRight,
   Layers,
   Award,
+  FlipHorizontal2,
+  Timer,
+  Flame,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCompanion } from '../context/CompanionContext';
 import { StudyCompanion } from './StudyCompanion';
-import { EdvantaLogo } from './brand/EdvantaBrand';
+import { EdvantaLogo, EdvantaSymbol } from './brand/EdvantaBrand';
+import { ThemeSegmentedControl } from './ui/ThemePrimitives';
 
 interface NavItem {
   label: string;
@@ -31,7 +39,9 @@ interface NavItem {
 
 const STUDENT_NAV: NavItem[] = [
   { label: 'Dashboard Overview', to: '/student/dashboard', icon: LayoutDashboard },
-  { label: 'Learning Modules', to: '/student/modules', icon: Layers },
+  { label: 'Learning & Journey', to: '/student/modules', icon: Layers },
+  { label: 'Flashcards', to: '/student/flashcards', icon: FlipHorizontal2 },
+  { label: 'Timed Mock Exams', to: '/student/mock-exam', icon: Timer },
   { label: 'My Learning', to: '/student/learning', icon: BookOpen },
   { label: 'Diagnostic Test', to: '/student/diagnostic', icon: ClipboardCheck },
   { label: 'Adaptive Practice', to: '/student/practice', icon: Sparkles },
@@ -58,9 +68,11 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const { user, logout } = useAuth();
+  const { isHidden, setIsHidden, setIsOpen } = useCompanion();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   if (!user) return null;
 
@@ -72,129 +84,191 @@ export function AppShell({
     navigate('/auth');
   };
 
-  const sidebarContent = (
-    <div className="flex h-full flex-col bg-[#101827] text-slate-200">
-      <div className="flex items-center justify-between px-5 py-5 border-b border-slate-800">
-        <Link
-          to="/"
-          aria-label="EDVANTA home"
-          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526BFF] rounded-lg"
+  const renderSidebar = (isMobileDrawer = false) => {
+    const compact = collapsed && !isMobileDrawer;
+    return (
+      <div className="flex h-full flex-col bg-white dark:bg-[#15182B] text-[#14172B] dark:text-[#F4F6FF] transition-colors">
+        <div
+          className={`flex items-center ${
+            compact ? 'justify-center px-3' : 'justify-between px-5'
+          } h-16 border-b border-[#E2E6F3] dark:border-[#2B3150] shrink-0`}
         >
-          <EdvantaLogo variant="dark" size="md" />
-        </Link>
-        <button
-          type="button"
-          onClick={() => setMobileOpen(false)}
-          aria-label="Close navigation menu"
-          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="px-6 pt-5 pb-2">
-        <p className="text-xs font-medium text-slate-400">{roleLabel}</p>
-        <p className="text-sm font-medium text-white truncate mt-0.5">{user.className || 'Class 10 Physics'}</p>
-      </div>
-
-      <nav aria-label="Workspace navigation" className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname === item.to;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
+          <Link
+            to="/"
+            aria-label="EDVANTA home"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7055F7] rounded-lg"
+          >
+            {compact ? <EdvantaSymbol size={28} variant="auto" /> : <EdvantaLogo variant="auto" size="md" />}
+          </Link>
+          {isMobileDrawer && (
+            <button
+              type="button"
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
-                isActive
-                  ? 'bg-[#526BFF] text-white'
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
+              aria-label="Close navigation menu"
+              className="lg:hidden p-1.5 rounded-lg text-[#6E7696] hover:text-[#14172B] dark:hover:text-white hover:bg-[#EEF1FA] dark:hover:bg-[#212640]"
             >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-slate-800 p-4 space-y-3">
-        <div className="px-2">
-          <p className="text-sm font-medium text-white truncate">{user.name}</p>
-          <p className="text-xs text-slate-400 truncate">{user.email}</p>
+              <X className="h-5 w-5" />
+            </button>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-        >
-          <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
-          Sign out
-        </button>
+
+        {!compact && (
+          <div className="px-5 pt-4 pb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#6E7696] dark:text-[#8892B5]">
+              {roleLabel}
+            </p>
+            <p className="text-sm font-medium text-[#14172B] dark:text-[#F4F6FF] truncate mt-0.5">
+              {user.className || 'Class 10 Physics'}
+            </p>
+          </div>
+        )}
+
+        <nav aria-label="Workspace navigation" className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.to;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                title={compact ? item.label : undefined}
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center ${
+                  compact ? 'justify-center px-2.5' : 'gap-3 px-3.5'
+                } rounded-xl py-2.5 text-sm font-medium transition-colors whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#7055F7] text-white shadow-xs'
+                    : 'text-[#4E5674] dark:text-[#B4BDD9] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] hover:text-[#14172B] dark:hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {!compact && <span className="truncate">{item.label}</span>}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-[#E2E6F3] dark:border-[#2B3150] p-3 space-y-2.5">
+          {!compact && (
+            <div className="px-2 py-1">
+              <p className="text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF] truncate">{user.name}</p>
+              <p className="text-xs text-[#6E7696] dark:text-[#8892B5] truncate">{user.email}</p>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            title={compact ? 'Sign out' : undefined}
+            className={`w-full flex items-center ${
+              compact ? 'justify-center px-2' : 'gap-2.5 px-3'
+            } rounded-xl py-2 text-sm font-medium text-[#4E5674] dark:text-[#B4BDD9] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] hover:text-[#14172B] dark:hover:text-white transition-colors`}
+          >
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {!compact && <span>Sign out</span>}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="min-h-screen flex bg-[#F5F7FC] text-[#101827]">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0 border-r border-slate-200 sticky top-0 h-screen">
-        {sidebarContent}
+    <div className="min-h-screen flex bg-[#F6F7FC] dark:bg-[#111322] text-[#14172B] dark:text-[#F4F6FF] transition-colors">
+      {/* Desktop collapsible sidebar */}
+      <aside
+        className={`hidden lg:block shrink-0 border-r border-[#E2E6F3] dark:border-[#2B3150] sticky top-0 h-screen transition-[width] duration-200 ${
+          collapsed ? 'w-[76px]' : 'w-64'
+        }`}
+      >
+        {renderSidebar(false)}
       </aside>
 
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/50"
+            className="fixed inset-0 bg-[#111322]/60 backdrop-blur-[2px]"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative z-10 w-72 max-w-[82vw] h-full">{sidebarContent}</aside>
+          <aside className="relative z-10 w-72 max-w-[82vw] h-full shadow-2xl">{renderSidebar(true)}</aside>
         </div>
       )}
 
       {/* Main viewport */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-4 bg-white/95 backdrop-blur border-b border-slate-200 px-4 sm:px-8 h-16">
-          <div className="flex items-center gap-3 min-w-0">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-3 bg-white/90 dark:bg-[#181B2E]/90 backdrop-blur border-b border-[#E2E6F3] dark:border-[#2B3150] px-3.5 sm:px-8 h-16 transition-colors">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
               aria-label="Open navigation menu"
-              className="lg:hidden p-2 -ml-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-[#101827]"
+              className="lg:hidden p-1.5 -ml-1.5 rounded-xl text-[#4E5674] dark:text-[#B4BDD9] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] hover:text-[#14172B] dark:hover:text-white"
             >
               <Menu className="h-5 w-5" />
             </button>
+            <button
+              type="button"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden lg:inline-flex p-2 -ml-2 rounded-xl text-[#6E7696] dark:text-[#8892B5] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] hover:text-[#14172B] dark:hover:text-white transition-colors"
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </button>
             <div className="flex items-center gap-2 text-sm min-w-0">
-              <span className="hidden sm:inline text-slate-500 whitespace-nowrap">
+              <span className="hidden xl:inline text-[#6E7696] dark:text-[#8892B5] whitespace-nowrap">
                 {user.role === 'teacher' ? 'Teacher' : 'Class 10 Electricity'}
               </span>
-              <ChevronRight className="hidden sm:inline h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
-              <h1 className="font-display text-base sm:text-lg font-semibold text-[#101827] truncate">
+              <ChevronRight className="hidden xl:inline h-4 w-4 text-[#6E7696] shrink-0" aria-hidden="true" />
+              <h1 className="font-display text-sm sm:text-lg font-semibold text-[#14172B] dark:text-[#F4F6FF] truncate">
                 {title}
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
-            <span className="hidden md:inline text-xs text-slate-500 whitespace-nowrap">
-              {user.name} · {user.role === 'teacher' ? 'Instructor' : `Streak ${user.streakDays}d`}
-            </span>
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <ThemeSegmentedControl compact />
+
+            {user.role === 'student' && isHidden && (
+              <button
+                type="button"
+                aria-label="Show Volt study companion"
+                onClick={() => {
+                  setIsHidden(false);
+                  setIsOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#EEF1FA]/70 dark:bg-[#212640] hover:bg-[#E2E6F3] dark:hover:bg-[#272D4B] px-2.5 py-1.5 text-xs font-medium text-[#7055F7] dark:text-[#A493FF] whitespace-nowrap transition-colors"
+              >
+                <Bot className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Show Volt</span>
+              </button>
+            )}
+
+            {user.role === 'student' && (
+              <Link
+                to="/student/achievements"
+                title="Active daily streak"
+                className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-[#F6B94A]/40 bg-[#F6B94A]/10 px-2.5 py-1.5 text-xs font-semibold text-[#B46E00] dark:text-[#F6B94A] whitespace-nowrap"
+              >
+                <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="font-mono tabular-nums">{user.streakDays}d</span>
+              </Link>
+            )}
+
             {user.role === 'student' ? (
               <Link
                 to="/student/practice"
-                className="px-4 py-2 rounded-lg bg-[#526BFF] hover:bg-[#4158E6] text-white text-xs font-medium transition-colors whitespace-nowrap shrink-0"
+                className="px-2.5 sm:px-4 py-2 rounded-xl bg-[#7055F7] hover:bg-[#5D42E6] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0 shadow-xs"
               >
-                Practice Next
+                <span className="sm:hidden">Practice</span>
+                <span className="hidden sm:inline">Practice Next</span>
               </Link>
             ) : (
               <Link
                 to="/teacher/reports"
-                className="px-4 py-2 rounded-lg bg-[#101827] hover:bg-slate-800 text-white text-xs font-medium transition-colors whitespace-nowrap shrink-0"
+                className="px-2.5 sm:px-4 py-2 rounded-xl bg-[#7055F7] hover:bg-[#5D42E6] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0 shadow-xs"
               >
-                Export Report
+                <span className="sm:hidden">Export</span>
+                <span className="hidden sm:inline">Export Report</span>
               </Link>
             )}
           </div>

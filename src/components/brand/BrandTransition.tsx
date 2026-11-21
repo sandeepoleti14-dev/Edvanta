@@ -17,7 +17,7 @@ export function BrandTransition({
 }: BrandTransitionProps) {
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#101827] will-change-[opacity,transform] ${
+      className={`fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#111322] will-change-[opacity,transform] ${
         isExiting ? 'pointer-events-none' : 'pointer-events-auto'
       }`}
       style={{

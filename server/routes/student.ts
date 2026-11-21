@@ -5,27 +5,45 @@ import { AuthenticatedRequest } from '../utils/auth';
 import {
   buildStudentDashboard,
   completeStudentModule,
+  getMockExamHistory,
+  getMockExamResultById,
   getStudentAchievements,
   getStudentConceptMasteries,
+  getStudentFlashcards,
+  getStudentJourney,
   getStudentMisconceptions,
   getStudentModules,
   getStudentRecentAttempts,
   getStudentRevisions,
+  reviewStudentFlashcard,
+  saveMockExamAttempt,
   syncStudentStreakAndAchievements,
+  toggleStudentSavedNote,
 } from '../services/studentDataService';
 import { computeOverallMastery, computeUpdatedMastery } from '../services/learnerModel';
 import { selectAdaptiveTarget } from '../services/adaptiveEngine';
 import {
   analyzeStudentReasoning,
   chatWithStudyCompanion,
-  generateQuestionWithGemini,
+  enrichMockExamCoachWithGemini,
+  generateQuestionWithGeminiResult,
 } from '../services/geminiService';
 import { computeNextRevisionSchedule } from '../services/revisionScheduler';
+import {
+  buildMockExamCoachAnalysis,
+  ExamQuestionCandidate,
+  selectMockExamQuestions,
+} from '../services/edurevStudyEngine';
+import { ELECTRICITY_FLASHCARDS } from '../curriculum/flashcards';
 import {
   AnswerEvaluationResult,
   DiagnosticSubmitResult,
   Difficulty,
   MasteryStatus,
+  MockExamAnswerSubmission,
+  MockExamConceptBreakdown,
+  MockExamQuestionReview,
+  MockExamStartPayload,
   QuestionItem,
 } from '../../shared/types';
 
@@ -379,8 +397,10 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
 
   let chosenRow = unseenMatchingDifficulty[0];
 
+  let aiNotice: string | undefined;
+
   if (generateAi || !chosenRow) {
-    const generated = await generateQuestionWithGemini({
+    const genResult = await generateQuestionWithGeminiResult({
       conceptName: target.concept.name,
       conceptDescription: target.concept.description,
       keyFormula: target.concept.keyFormula,
@@ -389,7 +409,8 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
       existingQuestions: existingForConcept.map((q) => q.question_text),
     });
 
-    if (generated) {
+    if (genResult.question) {
+      const generated = genResult.question;
       const insertInfo = db
         .prepare(
           `INSERT INTO questions (
@@ -421,6 +442,8 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
         is_diagnostic: 0,
         source: 'gemini',
       };
+    } else if (generateAi && genResult.aiNotice) {
+      aiNotice = genResult.aiNotice;
     }
   }
 
@@ -458,7 +481,7 @@ studentRouter.get('/practice/next', async (req: AuthenticatedRequest, res: Respo
     conceptStatus: target.concept.status,
   };
 
-  res.json({ question });
+  res.json(aiNotice ? { question, aiNotice } : { question });
 });
 
 studentRouter.post('/practice/submit', async (req: AuthenticatedRequest, res: Response) => {
@@ -954,5 +977,435 @@ studentRouter.post('/companion/chat', async (req: AuthenticatedRequest, res: Res
 
   res.json(result);
 });
+
+studentRouter.get('/journey', (req: AuthenticatedRequest, res: Response) => {
+  const journey = getStudentJourney(req.authUser!.id);
+  res.json(journey);
+});
+
+studentRouter.post('/notes/:conceptId/toggle', (req: AuthenticatedRequest, res: Response) => {
+  const conceptId = Number(req.params.conceptId);
+  if (!Number.isInteger(conceptId) || conceptId <= 0) {
+    res.status(400).json({ error: 'Invalid concept ID.' });
+    return;
+  }
+  const exists = db.prepare(`SELECT id FROM concepts WHERE id = ?`).get(conceptId) as { id: number } | undefined;
+  if (!exists) {
+    res.status(404).json({ error: 'Concept not found.' });
+    return;
+  }
+  const result = toggleStudentSavedNote(req.authUser!.id, conceptId);
+  res.json(result);
+});
+
+studentRouter.get('/flashcards', (req: AuthenticatedRequest, res: Response) => {
+  const payload = getStudentFlashcards(req.authUser!.id);
+  res.json(payload);
+});
+
+studentRouter.post('/flashcards/:cardId/review', (req: AuthenticatedRequest, res: Response) => {
+  const cardId = String(req.params.cardId || '').trim();
+  const validCard = ELECTRICITY_FLASHCARDS.some((c) => c.id === cardId);
+  if (!validCard) {
+    res.status(404).json({ error: 'Flashcard not found.' });
+    return;
+  }
+  const { confidence } = (req.body || {}) as { confidence?: string };
+  if (confidence !== 'known' && confidence !== 'review') {
+    res.status(400).json({ error: 'Confidence must be either "known" or "review".' });
+    return;
+  }
+  const payload = reviewStudentFlashcard(req.authUser!.id, cardId, confidence);
+  res.json(payload);
+});
+
+studentRouter.get('/mock-exam/start', (req: AuthenticatedRequest, res: Response) => {
+  const studentId = req.authUser!.id;
+  const masteries = getStudentConceptMasteries(studentId);
+  const rows = db
+    .prepare(
+      `SELECT q.id, q.concept_id, c.slug as concept_slug, c.name as concept_name,
+              q.difficulty, q.question_text, q.options_json, q.correct_index,
+              q.explanation, q.expected_reasoning
+       FROM questions q
+       JOIN concepts c ON c.id = q.concept_id
+       ORDER BY c.order_index ASC, q.id ASC`
+    )
+    .all() as Array<{
+    id: number;
+    concept_id: number;
+    concept_slug: string;
+    concept_name: string;
+    difficulty: Difficulty;
+    question_text: string;
+    options_json: string;
+    correct_index: number;
+    explanation: string;
+    expected_reasoning: string;
+  }>;
+
+  const candidates: ExamQuestionCandidate[] = rows.map((r) => ({
+    id: r.id,
+    conceptId: r.concept_id,
+    conceptSlug: r.concept_slug,
+    conceptName: r.concept_name,
+    difficulty: r.difficulty,
+    questionText: r.question_text,
+    options: JSON.parse(r.options_json) as string[],
+    correctIndex: r.correct_index,
+    explanation: r.explanation,
+    expectedReasoning: r.expected_reasoning,
+  }));
+
+  const selected = selectMockExamQuestions(candidates, masteries, 10);
+  const payload: MockExamStartPayload = {
+    examTitle: 'Class 10 Physics — Electricity Full-Syllabus Mock Exam',
+    subject: 'Class 10 Physics · Chapter 12: Electricity',
+    durationSeconds: 15 * 60,
+    totalQuestions: selected.length,
+    questions: selected.map((q) => ({
+      id: q.id,
+      conceptId: q.conceptId,
+      conceptSlug: q.conceptSlug,
+      conceptName: q.conceptName,
+      difficulty: q.difficulty,
+      questionText: q.questionText,
+      options: q.options,
+    })),
+  };
+
+  res.json(payload);
+});
+
+studentRouter.get('/mock-exam/history', (req: AuthenticatedRequest, res: Response) => {
+  const data = getMockExamHistory(req.authUser!.id);
+  res.json(data);
+});
+
+studentRouter.get('/mock-exam/:attemptId', (req: AuthenticatedRequest, res: Response) => {
+  const attemptId = Number(req.params.attemptId);
+  if (!Number.isInteger(attemptId) || attemptId <= 0) {
+    res.status(400).json({ error: 'Invalid mock exam attempt ID.' });
+    return;
+  }
+  const result = getMockExamResultById(req.authUser!.id, attemptId);
+  if (!result) {
+    res.status(404).json({ error: 'Mock exam result not found.' });
+    return;
+  }
+  res.json({ result });
+});
+
+studentRouter.post('/mock-exam/submit', async (req: AuthenticatedRequest, res: Response) => {
+  const student = req.authUser!;
+  const { answers, durationUsedSeconds } = (req.body || {}) as {
+    answers?: MockExamAnswerSubmission[];
+    durationUsedSeconds?: number;
+  };
+
+  if (!Array.isArray(answers) || answers.length === 0) {
+    res.status(400).json({ error: 'Please submit mock exam question responses.' });
+    return;
+  }
+
+  const cleanDuration =
+    typeof durationUsedSeconds === 'number' && Number.isFinite(durationUsedSeconds)
+      ? Math.max(1, Math.min(3600, Math.round(durationUsedSeconds)))
+      : 60;
+
+  const questionRows = db
+    .prepare(
+      `SELECT q.id, q.concept_id, c.slug as concept_slug, c.name as concept_name,
+              q.difficulty, q.question_text, q.options_json, q.correct_index,
+              q.explanation, q.expected_reasoning
+       FROM questions q
+       JOIN concepts c ON c.id = q.concept_id`
+    )
+    .all() as Array<{
+    id: number;
+    concept_id: number;
+    concept_slug: string;
+    concept_name: string;
+    difficulty: Difficulty;
+    question_text: string;
+    options_json: string;
+    correct_index: number;
+    explanation: string;
+    expected_reasoning: string;
+  }>;
+
+  const qMap = new Map(questionRows.map((q) => [q.id, q]));
+  const beforeMasteries = getStudentConceptMasteries(student.id);
+  const beforeByConcept = new Map(beforeMasteries.map((m) => [m.id, m.masteryScore]));
+
+  const evaluated = await Promise.all(
+    answers.map(async (item) => {
+      const q = qMap.get(item.questionId);
+      if (!q) return null;
+      const options = JSON.parse(q.options_json) as string[];
+      const hasSelection =
+        typeof item.selectedIndex === 'number' && item.selectedIndex >= 0 && item.selectedIndex <= 3;
+      const isCorrect = hasSelection && item.selectedIndex === q.correct_index;
+      const reasoningText = typeof item.reasoning === 'string' ? item.reasoning.trim() : '';
+
+      const analysis = hasSelection
+        ? await analyzeStudentReasoning({
+            conceptSlug: q.concept_slug,
+            conceptName: q.concept_name,
+            questionText: q.question_text,
+            selectedOptionText: options[item.selectedIndex!] ?? '',
+            correctOptionText: options[q.correct_index] ?? '',
+            isCorrect,
+            explanation: q.explanation,
+            expectedReasoning: q.expected_reasoning,
+            studentReasoning: reasoningText,
+          })
+        : {
+            source: 'rule' as const,
+            confidenceStatus: 'none' as const,
+            misconceptionDetected: false,
+            misconceptionTitle: null,
+            conceptualError: null,
+            correctiveExplanation: q.explanation,
+            reasoningQuality: 'insufficient' as const,
+            recommendedFocus: `Practice ${q.concept_name}`,
+          };
+
+      return { q, item, options, hasSelection, isCorrect, reasoningText, analysis };
+    })
+  );
+
+  const validItems = evaluated.filter((x): x is NonNullable<typeof x> => x !== null);
+  if (validItems.length === 0) {
+    res.status(400).json({ error: 'No matching mock exam questions were found.' });
+    return;
+  }
+
+  const nowIso = new Date().toISOString();
+  const correctCount = validItems.filter((v) => v.isCorrect).length;
+  const unansweredCount = validItems.filter((v) => !v.hasSelection).length;
+  const incorrectCount = validItems.length - correctCount - unansweredCount;
+  const scorePercent = Math.round((correctCount / validItems.length) * 100);
+
+  // Record answered items into learner_mastery and student_answers via practice assessment attempt
+  const answeredItems = validItems.filter((v) => v.hasSelection);
+  let practiceAttemptId: number | null = null;
+  if (answeredItems.length > 0) {
+    const attemptInfo = db
+      .prepare(
+        `INSERT INTO assessment_attempts (student_id, attempt_type, total_questions, correct_count, started_at, completed_at)
+         VALUES (?, 'practice', ?, ?, ?, ?)`
+      )
+      .run(student.id, answeredItems.length, correctCount, nowIso, nowIso);
+    practiceAttemptId = Number(attemptInfo.lastInsertRowid);
+  }
+
+  const conceptStatMap = new Map<
+    number,
+    { conceptId: number; conceptName: string; conceptSlug: string; total: number; correct: number }
+  >();
+  const misconceptionsDetected: string[] = [];
+
+  for (const entry of validItems) {
+    const cStat = conceptStatMap.get(entry.q.concept_id) ?? {
+      conceptId: entry.q.concept_id,
+      conceptName: entry.q.concept_name,
+      conceptSlug: entry.q.concept_slug,
+      total: 0,
+      correct: 0,
+    };
+    cStat.total += 1;
+    if (entry.isCorrect) cStat.correct += 1;
+    conceptStatMap.set(entry.q.concept_id, cStat);
+
+    if (!entry.hasSelection || practiceAttemptId === null) {
+      continue;
+    }
+
+    const existingMastery = db
+      .prepare(
+        `SELECT mastery_score, attempt_count, correct_count
+         FROM learner_mastery WHERE student_id = ? AND concept_id = ?`
+      )
+      .get(student.id, entry.q.concept_id) as
+      | { mastery_score: number; attempt_count: number; correct_count: number }
+      | undefined;
+
+    const currentScore = existingMastery ? existingMastery.mastery_score : 0;
+    const currentAttempts = existingMastery ? existingMastery.attempt_count : 0;
+    const currentCorrect = existingMastery ? existingMastery.correct_count : 0;
+
+    const updated = computeUpdatedMastery({
+      currentScore,
+      currentAttempts,
+      isCorrect: entry.isCorrect,
+      difficulty: entry.q.difficulty,
+      misconceptionDetected: entry.analysis.misconceptionDetected,
+      reasoningQuality: entry.analysis.reasoningQuality,
+      isDiagnostic: false,
+    });
+
+    db.prepare(
+      `INSERT INTO learner_mastery (student_id, concept_id, mastery_score, status, attempt_count, correct_count, last_practiced_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(student_id, concept_id) DO UPDATE SET
+         mastery_score = excluded.mastery_score,
+         status = excluded.status,
+         attempt_count = excluded.attempt_count,
+         correct_count = excluded.correct_count,
+         last_practiced_at = excluded.last_practiced_at`
+    ).run(
+      student.id,
+      entry.q.concept_id,
+      updated.newScore,
+      updated.newStatus,
+      updated.newAttempts,
+      currentCorrect + (entry.isCorrect ? 1 : 0),
+      nowIso
+    );
+
+    db.prepare(
+      `INSERT INTO student_answers (
+        attempt_id, student_id, question_id, concept_id, selected_index, is_correct,
+        student_reasoning, mastery_before, mastery_after, reasoning_quality,
+        misconception_title, corrective_explanation, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      practiceAttemptId,
+      student.id,
+      entry.q.id,
+      entry.q.concept_id,
+      entry.item.selectedIndex!,
+      entry.isCorrect ? 1 : 0,
+      entry.reasoningText,
+      currentScore,
+      updated.newScore,
+      entry.analysis.reasoningQuality,
+      entry.analysis.misconceptionTitle,
+      entry.analysis.correctiveExplanation,
+      nowIso
+    );
+
+    if (entry.analysis.misconceptionDetected && entry.analysis.misconceptionTitle) {
+      misconceptionsDetected.push(entry.analysis.misconceptionTitle);
+      db.prepare(
+        `INSERT INTO misconceptions (
+          student_id, concept_id, question_id, student_reasoning, misconception_title,
+          conceptual_error, corrective_explanation, confidence_status, resolved, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`
+      ).run(
+        student.id,
+        entry.q.concept_id,
+        entry.q.id,
+        entry.reasoningText,
+        entry.analysis.misconceptionTitle,
+        entry.analysis.conceptualError ?? 'Conceptual discrepancy detected during Mock Exam.',
+        entry.analysis.correctiveExplanation,
+        entry.analysis.confidenceStatus,
+        nowIso
+      );
+    }
+
+    const schedule = computeNextRevisionSchedule({
+      masteryScore: updated.newScore,
+      isCorrect: entry.isCorrect,
+      misconceptionDetected: entry.analysis.misconceptionDetected,
+      previousRepetitionCount: 0,
+    });
+    const pendingRev = db
+      .prepare(
+        `SELECT id FROM revision_schedules WHERE student_id = ? AND concept_id = ? AND completed_at IS NULL LIMIT 1`
+      )
+      .get(student.id, entry.q.concept_id) as { id: number } | undefined;
+    if (pendingRev) {
+      db.prepare(
+        `UPDATE revision_schedules SET scheduled_for = ?, interval_days = ?, reason = ? WHERE id = ?`
+      ).run(schedule.scheduledForIso, schedule.intervalDays, schedule.reason, pendingRev.id);
+    } else {
+      db.prepare(
+        `INSERT INTO revision_schedules (
+          student_id, concept_id, scheduled_for, interval_days, repetition_count, reason, created_at
+        ) VALUES (?, ?, ?, ?, 0, ?, ?)`
+      ).run(student.id, entry.q.concept_id, schedule.scheduledForIso, schedule.intervalDays, schedule.reason, nowIso);
+    }
+  }
+
+  const synced = syncStudentStreakAndAchievements(student.id);
+  const afterMasteries = getStudentConceptMasteries(student.id);
+  const afterByConcept = new Map(afterMasteries.map((m) => [m.id, m]));
+  const overallMasteryAfter = computeOverallMastery(afterMasteries);
+
+  const conceptBreakdown: MockExamConceptBreakdown[] = Array.from(conceptStatMap.values()).map((c) => {
+    const afterM = afterByConcept.get(c.conceptId);
+    return {
+      conceptId: c.conceptId,
+      conceptName: c.conceptName,
+      conceptSlug: c.conceptSlug,
+      totalQuestions: c.total,
+      correctCount: c.correct,
+      accuracy: c.total > 0 ? Math.round((c.correct / c.total) * 100) : 0,
+      masteryBefore: beforeByConcept.get(c.conceptId) ?? 0,
+      masteryAfter: afterM?.masteryScore ?? 0,
+      status: afterM?.status ?? 'not_started',
+    };
+  });
+
+  const questionReviews: MockExamQuestionReview[] = validItems.map((entry) => ({
+    questionId: entry.q.id,
+    conceptId: entry.q.concept_id,
+    conceptName: entry.q.concept_name,
+    difficulty: entry.q.difficulty,
+    questionText: entry.q.question_text,
+    options: entry.options,
+    selectedIndex: entry.hasSelection ? entry.item.selectedIndex : null,
+    correctIndex: entry.q.correct_index,
+    isCorrect: entry.isCorrect,
+    explanation: entry.q.explanation,
+    studentReasoning: entry.reasoningText,
+    misconceptionTitle: entry.analysis.misconceptionTitle,
+  }));
+
+  const deterministicCoach = buildMockExamCoachAnalysis({
+    scorePercent,
+    correctCount,
+    incorrectCount,
+    unansweredCount,
+    totalQuestions: validItems.length,
+    durationUsedSeconds: cleanDuration,
+    conceptBreakdown,
+    misconceptionsDetected,
+  });
+
+  const coachAnalysis = await enrichMockExamCoachWithGemini({
+    studentName: student.name,
+    scorePercent,
+    correctCount,
+    totalQuestions: validItems.length,
+    durationUsedSeconds: cleanDuration,
+    conceptBreakdown,
+    misconceptionsDetected,
+    deterministicCoach,
+  });
+
+  const savedResult = saveMockExamAttempt(student.id, {
+    scorePercent,
+    correctCount,
+    incorrectCount,
+    unansweredCount,
+    totalQuestions: validItems.length,
+    durationUsedSeconds: cleanDuration,
+    averageSecondsPerQuestion: Math.round(cleanDuration / validItems.length),
+    overallMasteryAfter,
+    conceptBreakdown,
+    questionReviews,
+    coachAnalysis,
+    newlyUnlockedBadges: synced.newlyUnlocked,
+    streakDays: synced.streakDays,
+    completedAt: nowIso,
+  });
+
+  res.json(savedResult);
+});
+
 
 

@@ -102,6 +102,45 @@ export interface AttemptHistoryItem {
   createdAt: string;
 }
 
+export interface WeeklyActivityDay {
+  date: string;
+  dayLabel: string;
+  count: number;
+  active: boolean;
+  isToday: boolean;
+}
+
+export interface DailyQuestItem {
+  id: string;
+  title: string;
+  description: string;
+  progress: number;
+  target: number;
+  xpReward: number;
+  completed: boolean;
+}
+
+export interface GamificationSummary {
+  level: number;
+  levelTitle: string;
+  totalXp: number;
+  xpInLevel: number;
+  xpForNextLevel: number;
+  xpRemaining: number;
+  progressPercent: number;
+  streakDays: number;
+  longestStreakDays: number;
+  dailyGoalTarget: number;
+  dailyGoalCompleted: number;
+  weeklyActivity: WeeklyActivityDay[];
+  companionTier: {
+    tier: number;
+    title: string;
+    unlockHint: string;
+  };
+  quests: DailyQuestItem[];
+}
+
 export interface StudentDashboardPayload {
   user: AuthUser;
   hasCompletedDiagnostic: boolean;
@@ -128,6 +167,7 @@ export interface StudentDashboardPayload {
     avgMastery: number;
     attempts: number;
   }>;
+  gamification?: GamificationSummary;
 }
 
 export interface AnswerEvaluationResult {
@@ -257,6 +297,7 @@ export interface AchievementsPayload {
   unlockedCount: number;
   totalCount: number;
   badges: AchievementBadge[];
+  gamification?: GamificationSummary;
 }
 
 export interface LearningModuleItem {
@@ -289,7 +330,15 @@ export interface LearningModuleItem {
   masteryStatus: MasteryStatus;
 }
 
-export type CompanionMood = 'idle' | 'thinking' | 'celebrating' | 'encouraging';
+export type CompanionMood =
+  | 'idle'
+  | 'welcome'
+  | 'thinking'
+  | 'celebrating'
+  | 'encouraging'
+  | 'achievement'
+  | 'streak'
+  | 'mastered';
 
 export interface CompanionAction {
   label: string;
@@ -308,5 +357,159 @@ export interface CompanionChatMessage {
   actions?: CompanionAction[];
   suggestedReplies?: string[];
 }
+
+export type FlashcardConfidence = 'new' | 'review' | 'known';
+
+export type FlashcardCategory = 'Formula' | 'Law' | 'SI Units' | 'Circuit Rule' | 'Exam Trap';
+
+export interface FlashcardItem {
+  id: string;
+  conceptId: number;
+  conceptSlug: string;
+  conceptName: string;
+  category: FlashcardCategory;
+  frontPrompt: string;
+  backAnswer: string;
+  formulaHint: string;
+  examTip: string;
+  confidence: FlashcardConfidence;
+  reviewCount: number;
+  lastReviewedAt: string | null;
+}
+
+export interface FlashcardsPayload {
+  cards: FlashcardItem[];
+  stats: {
+    total: number;
+    known: number;
+    needsReview: number;
+    unreviewed: number;
+  };
+  streakDays?: number;
+}
+
+export interface JourneyMilestone {
+  conceptId: number;
+  conceptSlug: string;
+  orderIndex: number;
+  title: string;
+  subtitle: string;
+  keyFormula: string;
+  estimatedMinutes: number;
+  masteryScore: number;
+  masteryStatus: MasteryStatus;
+  moduleCompleted: boolean;
+  flashcardsKnown: number;
+  flashcardsTotal: number;
+  practiceAttempts: number;
+  noteSavedOffline: boolean;
+  nextStepType: 'learn' | 'flashcards' | 'practice' | 'complete';
+  nextStepLabel: string;
+  nextStepPath: string;
+}
+
+export interface StudentJourneyPayload {
+  milestones: JourneyMilestone[];
+  upNext: JourneyMilestone;
+  savedNoteConceptIds: number[];
+  overallCompletionPercent: number;
+}
+
+export interface MockExamQuestion {
+  id: number;
+  conceptId: number;
+  conceptSlug: string;
+  conceptName: string;
+  difficulty: Difficulty;
+  questionText: string;
+  options: string[];
+}
+
+export interface MockExamStartPayload {
+  examTitle: string;
+  subject: string;
+  durationSeconds: number;
+  totalQuestions: number;
+  questions: MockExamQuestion[];
+}
+
+export interface MockExamAnswerSubmission {
+  questionId: number;
+  selectedIndex: number | null;
+  reasoning?: string;
+}
+
+export interface MockExamConceptBreakdown {
+  conceptId: number;
+  conceptName: string;
+  conceptSlug: string;
+  totalQuestions: number;
+  correctCount: number;
+  accuracy: number;
+  masteryBefore: number;
+  masteryAfter: number;
+  status: MasteryStatus;
+}
+
+export interface MockExamQuestionReview {
+  questionId: number;
+  conceptId: number;
+  conceptName: string;
+  difficulty: Difficulty;
+  questionText: string;
+  options: string[];
+  selectedIndex: number | null;
+  correctIndex: number;
+  isCorrect: boolean;
+  explanation: string;
+  studentReasoning: string;
+  misconceptionTitle: string | null;
+}
+
+export interface MockExamCoachAnalysis {
+  readinessTier: 'Exam Ready' | 'Developing Momentum' | 'Needs Focused Revision';
+  headline: string;
+  summary: string;
+  strengths: string[];
+  priorityFocusConcepts: Array<{
+    conceptId: number;
+    conceptName: string;
+    reason: string;
+    actionLabel: string;
+    targetPath: string;
+  }>;
+  timeManagementNote: string;
+  roadmapSteps: string[];
+  source: 'gemini' | 'deterministic';
+}
+
+export interface MockExamResultPayload {
+  attemptId: number;
+  scorePercent: number;
+  correctCount: number;
+  incorrectCount: number;
+  unansweredCount: number;
+  totalQuestions: number;
+  durationUsedSeconds: number;
+  averageSecondsPerQuestion: number;
+  overallMasteryAfter: number;
+  conceptBreakdown: MockExamConceptBreakdown[];
+  questionReviews: MockExamQuestionReview[];
+  coachAnalysis: MockExamCoachAnalysis;
+  newlyUnlockedBadges?: AchievementBadge[];
+  streakDays?: number;
+  completedAt: string;
+}
+
+export interface MockExamHistoryItem {
+  attemptId: number;
+  totalQuestions: number;
+  correctCount: number;
+  scorePercent: number;
+  durationUsedSeconds: number;
+  readinessTier: MockExamCoachAnalysis['readinessTier'];
+  completedAt: string;
+}
+
 
 

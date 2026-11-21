@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
 import { MasteryStatusText } from '../../components/StatusIndicator';
+import { SurfaceCard } from '../../components/ui/ThemePrimitives';
 import { apiFetch } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -81,8 +82,8 @@ export function DiagnosticPage() {
       }
       if (res.newlyUnlockedBadges && res.newlyUnlockedBadges.length > 0) {
         const names = res.newlyUnlockedBadges.map((b) => b.title).join(', ');
-        showToast(`Diagnostic complete! Unlocked badge: ${names}`, 'success');
-        triggerReaction('celebrating', `Diagnostic complete & badge unlocked: ${names}!`, 4800);
+        showToast(`Diagnostic complete! Unlocked badge: ${names}`, 'xp');
+        triggerReaction('achievement', `Diagnostic complete & badge unlocked: ${names}!`, 4800);
       } else {
         showToast('Diagnostic completed — learner profile updated!', 'success');
         triggerReaction(
@@ -102,7 +103,7 @@ export function DiagnosticPage() {
   if (loading) {
     return (
       <AppShell title="Diagnostic Assessment">
-        <div className="h-80 rounded-xl bg-white border border-slate-200 animate-pulse" />
+        <div className="h-80 rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] animate-pulse" />
       </AppShell>
     );
   }
@@ -110,10 +111,10 @@ export function DiagnosticPage() {
   if (error) {
     return (
       <AppShell title="Diagnostic Assessment">
-        <div className="rounded-xl border border-red-200 bg-white p-6 flex items-center gap-3 text-sm text-[#DC2626]">
+        <SurfaceCard className="p-6 flex items-center gap-3 text-sm text-[#E5484D] dark:text-[#F87171]">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
-        </div>
+        </SurfaceCard>
       </AppShell>
     );
   }
@@ -122,85 +123,85 @@ export function DiagnosticPage() {
     return (
       <AppShell title="Diagnostic Summary">
         <div className="space-y-6">
-          <section className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <SurfaceCard className="p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#16A34A]">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#15996C] dark:text-[#27C991]">
                 <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 Baseline Learner Profile Generated
               </div>
-              <h2 className="font-display text-2xl font-bold text-[#101827] mt-1">
+              <h2 className="font-display text-2xl font-bold text-[#14172B] dark:text-[#F4F6FF] mt-1">
                 Diagnostic Complete — Class 10 Electricity
               </h2>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-1">
                 EDVANTA evaluated your responses and calibrated mastery across all {result.totalQuestions} core
                 concepts.
               </p>
             </div>
             <div className="flex items-center gap-6 shrink-0">
               <div>
-                <p className="text-xs text-slate-500">Score</p>
-                <p className="font-mono text-2xl font-bold tabular-nums text-[#101827]">
+                <p className="text-xs text-[#6E7696] dark:text-[#8892B5]">Score</p>
+                <p className="font-mono text-2xl font-bold tabular-nums text-[#14172B] dark:text-[#F4F6FF]">
                   {result.correctCount}/{result.totalQuestions}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">Accuracy</p>
-                <p className="font-mono text-2xl font-bold tabular-nums text-[#101827]">
+                <p className="text-xs text-[#6E7696] dark:text-[#8892B5]">Accuracy</p>
+                <p className="font-mono text-2xl font-bold tabular-nums text-[#14172B] dark:text-[#F4F6FF]">
                   {result.accuracyRate}%
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-500">Overall Mastery</p>
-                <p className="font-mono text-2xl font-bold tabular-nums text-[#526BFF]">
+                <p className="text-xs text-[#6E7696] dark:text-[#8892B5]">Overall Mastery</p>
+                <p className="font-mono text-2xl font-bold tabular-nums text-[#7055F7] dark:text-[#A493FF]">
                   {result.overallMastery}%
                 </p>
               </div>
             </div>
-          </section>
+          </SurfaceCard>
 
-          <section className="rounded-xl border border-slate-200 bg-white p-6">
-            <h3 className="font-display text-base font-semibold text-[#101827] mb-4">
+          <SurfaceCard className="p-6">
+            <h3 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] mb-4">
               Concept-by-Concept Baseline
             </h3>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[#E2E6F3] dark:divide-[#2B3150]">
               {result.conceptResults.map((item) => (
                 <div key={item.conceptId} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-[#101827]">{item.conceptName}</p>
+                    <p className="text-sm font-medium text-[#14172B] dark:text-[#F4F6FF]">{item.conceptName}</p>
                     {item.misconceptionTitle && (
-                      <p className="text-xs text-[#DC2626] mt-0.5">
+                      <p className="text-xs text-[#E5484D] dark:text-[#F87171] mt-0.5">
                         Misconception detected: {item.misconceptionTitle}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <MasteryStatusText status={item.status} />
-                    <span className="font-mono text-sm font-semibold tabular-nums text-[#101827] w-12 text-right">
+                    <span className="font-mono text-sm font-semibold tabular-nums text-[#14172B] dark:text-[#F4F6FF] w-12 text-right">
                       {item.masteryScore}%
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
+          </SurfaceCard>
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
               to="/student/practice"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#526BFF] hover:bg-[#4158E6] px-5 py-2.5 text-sm font-medium text-white transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#7055F7] hover:bg-[#5D42E6] px-5 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               <Sparkles className="h-4 w-4" aria-hidden="true" />
               Start Adaptive Practice
             </Link>
             <Link
               to="/student/concept-map"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-5 py-2.5 text-sm font-medium text-[#101827] transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#181B2E] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] px-5 py-2.5 text-sm font-medium text-[#14172B] dark:text-[#F4F6FF] transition-colors"
             >
               Inspect Concept Map
             </Link>
             <Link
               to="/student/dashboard"
-              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-[#101827] px-3 py-2"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[#4E5674] dark:text-[#B4BDD9] hover:text-[#14172B] dark:hover:text-white px-3 py-2"
             >
               Return to Dashboard
             </Link>
@@ -214,10 +215,10 @@ export function DiagnosticPage() {
     <AppShell title="Diagnostic Assessment">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Progress Header */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <SurfaceCard className="p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#6E7696] dark:text-[#8892B5]">
             <span>Class 10 Physics — Electricity Baseline</span>
-            <span className="font-mono tabular-nums">
+            <span className="font-mono tabular-nums font-medium text-[#14172B] dark:text-[#F4F6FF]">
               {answeredCount} of {questions.length} answered
             </span>
           </div>
@@ -233,29 +234,29 @@ export function DiagnosticPage() {
                   aria-label={`Jump to question ${idx + 1}: ${q.conceptName}`}
                   className={`h-2.5 flex-1 rounded-full transition-colors ${
                     isCurrent
-                      ? 'bg-[#526BFF]'
+                      ? 'bg-[#7055F7]'
                       : isAnswered
-                      ? 'bg-[#16A34A]'
-                      : 'bg-slate-200 hover:bg-slate-300'
+                      ? 'bg-[#27C991]'
+                      : 'bg-[#E2E6F3] dark:bg-[#2B3150] hover:bg-[#CBD3E8] dark:hover:bg-[#3C456D]'
                   }`}
                 />
               );
             })}
           </div>
-        </div>
+        </SurfaceCard>
 
         {/* Question Card */}
         {currentQuestion && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
+          <SurfaceCard className="p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between gap-3 text-xs text-[#6E7696] dark:text-[#8892B5]">
               <span>
                 Question {currentIdx + 1} of {questions.length} ·{' '}
-                <strong className="font-semibold text-[#101827]">{currentQuestion.conceptName}</strong>
+                <strong className="font-semibold text-[#14172B] dark:text-[#F4F6FF]">{currentQuestion.conceptName}</strong>
               </span>
               <span className="capitalize font-mono">{currentQuestion.difficulty}</span>
             </div>
 
-            <h2 className="font-display text-lg sm:text-xl font-semibold text-[#101827] leading-snug">
+            <h2 className="font-display text-lg sm:text-xl font-semibold text-[#14172B] dark:text-[#F4F6FF] leading-snug">
               {currentQuestion.questionText}
             </h2>
 
@@ -269,15 +270,17 @@ export function DiagnosticPage() {
                     role="radio"
                     aria-checked={isSelected}
                     onClick={() => setSelectedMap((prev) => ({ ...prev, [currentQuestion.id]: idx }))}
-                    className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                    className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
                       isSelected
-                        ? 'border-[#526BFF] bg-[#526BFF]/5 text-[#101827] font-medium'
-                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
+                        ? 'border-[#7055F7] bg-[#7055F7]/8 dark:bg-[#7055F7]/15 text-[#14172B] dark:text-white font-medium'
+                        : 'border-[#E2E6F3] dark:border-[#2B3150] hover:border-[#CBD3E8] dark:hover:border-[#3C456D] hover:bg-[#F2F4FB] dark:hover:bg-[#212640] text-[#4E5674] dark:text-[#B4BDD9]'
                     }`}
                   >
                     <span
-                      className={`h-5 w-5 rounded-full border flex items-center justify-center text-xs font-mono shrink-0 ${
-                        isSelected ? 'border-[#526BFF] bg-[#526BFF] text-white' : 'border-slate-300 text-slate-500'
+                      className={`h-6 w-6 rounded-full border flex items-center justify-center text-xs font-mono shrink-0 ${
+                        isSelected
+                          ? 'border-[#7055F7] bg-[#7055F7] text-white'
+                          : 'border-[#CBD3E8] dark:border-[#3C456D] text-[#6E7696] dark:text-[#8892B5]'
                       }`}
                     >
                       {String.fromCharCode(65 + idx)}
@@ -291,7 +294,7 @@ export function DiagnosticPage() {
             <div>
               <label
                 htmlFor={`diag-reasoning-${currentQuestion.id}`}
-                className="block text-xs font-medium text-slate-700 mb-1.5"
+                className="block text-xs font-medium text-[#4E5674] dark:text-[#B4BDD9] mb-1.5"
               >
                 Explain your reasoning (optional — enables misconception detection)
               </label>
@@ -303,16 +306,16 @@ export function DiagnosticPage() {
                   setReasoningMap((prev) => ({ ...prev, [currentQuestion.id]: e.target.value }))
                 }
                 placeholder="Briefly describe the formula or physical principle you used..."
-                className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-[#101827] focus:border-[#526BFF] focus:outline-none focus:ring-2 focus:ring-[#526BFF]/20"
+                className="w-full rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#111322] px-3.5 py-2.5 text-sm text-[#14172B] dark:text-[#F4F6FF] placeholder:text-[#6E7696] focus:border-[#7055F7] focus:outline-none focus:ring-2 focus:ring-[#7055F7]/20"
               />
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+            <div className="pt-4 border-t border-[#E2E6F3] dark:border-[#2B3150] flex items-center justify-between gap-3">
               <button
                 type="button"
                 disabled={currentIdx === 0}
                 onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 text-sm font-medium text-[#101827] disabled:opacity-40 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#181B2E] hover:bg-[#EEF1FA] dark:hover:bg-[#212640] px-4 py-2 text-sm font-medium text-[#14172B] dark:text-[#F4F6FF] disabled:opacity-40 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                 Previous
@@ -322,7 +325,7 @@ export function DiagnosticPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#101827] hover:bg-slate-800 px-5 py-2 text-sm font-medium text-white transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#14172B] dark:bg-[#477BFF] hover:opacity-90 px-5 py-2 text-sm font-semibold text-white transition-opacity"
                 >
                   Next Question
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -332,14 +335,14 @@ export function DiagnosticPage() {
                   type="button"
                   disabled={submitting}
                   onClick={handleSubmitAll}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#526BFF] hover:bg-[#4158E6] px-5 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#7055F7] hover:bg-[#5D42E6] px-5 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                 >
                   {submitting ? 'Analyzing & Scoring...' : 'Submit Diagnostic'}
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                 </button>
               )}
             </div>
-          </div>
+          </SurfaceCard>
         )}
       </div>
     </AppShell>

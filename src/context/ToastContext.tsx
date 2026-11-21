@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { Award, CheckCircle2, AlertCircle, Info, Sparkles, X } from 'lucide-react';
 
-export type ToastVariant = 'success' | 'error' | 'info';
+export type ToastVariant = 'success' | 'error' | 'info' | 'xp';
 
 interface ToastItem {
   id: number;
@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => [...prev.slice(-3), { id, message, variant }]);
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 2800);
+    }, 3400);
   }, []);
 
   return (
@@ -41,17 +41,37 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className="pointer-events-auto flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-lg text-sm text-[#101827]"
+            className={`pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-float)] text-sm edvanta-xp-pop ${
+              toast.variant === 'xp'
+                ? 'border-[#F6B94A]/50 bg-[#FFFDF7] dark:bg-[#231F18] text-[#14172B] dark:text-[#F4F6FF]'
+                : 'border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] text-[#14172B] dark:text-[#F4F6FF]'
+            }`}
           >
-            {toast.variant === 'success' && <CheckCircle2 className="h-4 w-4 text-[#16A34A] mt-0.5 shrink-0" />}
-            {toast.variant === 'error' && <AlertCircle className="h-4 w-4 text-[#DC2626] mt-0.5 shrink-0" />}
-            {toast.variant === 'info' && <Info className="h-4 w-4 text-[#526BFF] mt-0.5 shrink-0" />}
-            <p className="flex-1 leading-snug">{toast.message}</p>
+            {toast.variant === 'success' && (
+              <CheckCircle2 className="h-4 w-4 text-[#27C991] mt-0.5 shrink-0" />
+            )}
+            {toast.variant === 'error' && (
+              <AlertCircle className="h-4 w-4 text-[#E5484D] dark:text-[#F87171] mt-0.5 shrink-0" />
+            )}
+            {toast.variant === 'info' && (
+              <Info className="h-4 w-4 text-[#477BFF] mt-0.5 shrink-0" />
+            )}
+            {toast.variant === 'xp' && (
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-[#F6B94A]/20 text-[#D98B14] dark:text-[#F6B94A] shrink-0">
+                <Award className="h-3.5 w-3.5" />
+              </span>
+            )}
+            <p className="flex-1 leading-snug flex items-center gap-1.5">
+              <span>{toast.message}</span>
+              {toast.variant === 'xp' && (
+                <Sparkles className="h-3.5 w-3.5 text-[#F6B94A] shrink-0" aria-hidden="true" />
+              )}
+            </p>
             <button
               type="button"
               onClick={() => dismiss(toast.id)}
               aria-label="Dismiss notification"
-              className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors"
+              className="text-[#6E7696] hover:text-[#14172B] dark:hover:text-white p-0.5 rounded transition-colors"
             >
               <X className="h-4 w-4" />
             </button>

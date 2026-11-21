@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
+import { ProgressBar, SurfaceCard, useChartTheme } from '../../components/ui/ThemePrimitives';
 import { apiFetch } from '../../lib/api';
 import {
   AttemptHistoryItem,
@@ -31,6 +32,7 @@ interface AnalyticsResponse {
 }
 
 export function AnalyticsPage() {
+  const chartTheme = useChartTheme();
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,22 +58,22 @@ export function AnalyticsPage() {
     <AppShell title="Performance Analytics">
       {loading ? (
         <div className="space-y-6 animate-pulse">
-          <div className="h-64 rounded-xl bg-white border border-slate-200" />
-          <div className="h-64 rounded-xl bg-white border border-slate-200" />
+          <div className="h-64 rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150]" />
+          <div className="h-64 rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150]" />
         </div>
       ) : error || !data ? (
-        <div className="rounded-xl border border-red-200 bg-white p-6 flex items-center gap-3 text-sm text-[#DC2626]">
+        <SurfaceCard className="p-6 flex items-center gap-3 text-sm text-[#E5484D] dark:text-[#F87171]">
           <AlertCircle className="h-5 w-5" />
           <span>{error || 'Analytics unavailable.'}</span>
-        </div>
+        </SurfaceCard>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 rounded-xl border border-slate-200 bg-white p-6">
-              <h2 className="font-display text-base font-semibold text-[#101827]">
+            <SurfaceCard className="lg:col-span-7 p-6">
+              <h2 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
                 Concept Mastery Breakdown
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5 mb-4">
+              <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5 mb-4">
                 Persisted mastery percentage across all 8 Electricity concepts
               </p>
               <div className="h-64 w-full">
@@ -83,102 +85,125 @@ export function AnalyticsPage() {
                     }))}
                     margin={{ top: 8, right: 8, left: -18, bottom: 20 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.gridStroke} vertical={false} />
                     <XAxis
                       dataKey="name"
-                      tick={{ fontSize: 11, fill: '#475569' }}
+                      tick={{ fontSize: 11, fill: chartTheme.tickFill }}
                       interval={0}
                       angle={-18}
                       textAnchor="end"
                       height={54}
                     />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748B' }} />
-                    <Tooltip />
-                    <Bar dataKey="mastery" name="Mastery %" fill="#526BFF" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: chartTheme.tickFill }} />
+                    <Tooltip
+                      cursor={{ fill: chartTheme.isDark ? 'rgba(112, 85, 247, 0.14)' : 'rgba(112, 85, 247, 0.08)' }}
+                      contentStyle={{
+                        borderRadius: 12,
+                        backgroundColor: chartTheme.tooltipBg,
+                        borderColor: chartTheme.tooltipBorder,
+                        color: chartTheme.tooltipText,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar
+                      dataKey="mastery"
+                      name="Mastery %"
+                      fill={chartTheme.primary}
+                      radius={[6, 6, 0, 0]}
+                      isAnimationActive={false}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </SurfaceCard>
 
-            <div className="lg:col-span-5 rounded-xl border border-slate-200 bg-white p-6">
-              <h2 className="font-display text-base font-semibold text-[#101827]">
+            <SurfaceCard className="lg:col-span-5 p-6">
+              <h2 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
                 Accuracy by Difficulty Tier
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5 mb-4">
+              <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5 mb-4">
                 How your responses perform across adaptive tiers
               </p>
 
               {data.difficultyBreakdown.length === 0 ? (
-                <p className="text-sm text-slate-500 mt-8">No attempts recorded yet.</p>
+                <p className="text-sm text-[#6E7696] dark:text-[#8892B5] mt-8">No attempts recorded yet.</p>
               ) : (
                 <div className="space-y-4 mt-4">
                   {data.difficultyBreakdown.map((d) => (
                     <div key={d.difficulty} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="capitalize font-medium text-[#101827]">{d.difficulty}</span>
-                        <span className="font-mono text-xs tabular-nums text-slate-600">
+                        <span className="capitalize font-medium text-[#14172B] dark:text-[#F4F6FF]">
+                          {d.difficulty}
+                        </span>
+                        <span className="font-mono text-xs tabular-nums text-[#4E5674] dark:text-[#B4BDD9]">
                           {d.correct}/{d.attempts} correct ({d.accuracy}%)
                         </span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#8B6CFF]" style={{ width: `${d.accuracy}%` }} />
-                      </div>
+                      <ProgressBar
+                        value={d.accuracy}
+                        max={100}
+                        tone="secondary"
+                        heightClass="h-2"
+                        label={`${d.difficulty} tier accuracy`}
+                      />
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </SurfaceCard>
           </div>
 
           {/* Logged Misconceptions */}
-          <section className="rounded-xl border border-slate-200 bg-white p-6">
-            <h2 className="font-display text-base font-semibold text-[#101827]">
+          <SurfaceCard className="p-6">
+            <h2 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
               Misconception History
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5">
               Conceptual errors diagnosed from your written reasoning
             </p>
 
             {data.misconceptions.length === 0 ? (
-              <p className="text-sm text-slate-500 mt-4">No conceptual misconceptions logged.</p>
+              <p className="text-sm text-[#6E7696] dark:text-[#8892B5] mt-4">
+                No conceptual misconceptions logged.
+              </p>
             ) : (
-              <div className="mt-4 divide-y divide-slate-100">
+              <div className="mt-4 divide-y divide-[#E2E6F3] dark:divide-[#2B3150]">
                 {data.misconceptions.map((m) => (
                   <div key={m.id} className="py-4 first:pt-0 last:pb-0 space-y-1.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-xs font-medium">
                         {m.resolved ? (
-                          <span className="inline-flex items-center gap-1 text-[#16A34A]">
+                          <span className="inline-flex items-center gap-1 text-[#15996C] dark:text-[#27C991]">
                             <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                             Resolved
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[#DC2626]">
+                          <span className="inline-flex items-center gap-1 text-[#E5484D] dark:text-[#F87171]">
                             <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
                             Active Focus
                           </span>
                         )}
-                        <span className="text-slate-400">·</span>
-                        <span className="text-[#526BFF]">{m.conceptName}</span>
+                        <span className="text-[#CBD3E8] dark:text-[#3C456D]">·</span>
+                        <span className="text-[#7055F7] dark:text-[#A493FF]">{m.conceptName}</span>
                       </div>
-                      <span className="font-mono text-xs text-slate-400 tabular-nums">
+                      <span className="font-mono text-xs text-[#6E7696] dark:text-[#8892B5] tabular-nums">
                         {new Date(m.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="font-display text-sm font-semibold text-[#101827]">
+                    <p className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
                       {m.misconceptionTitle}
                     </p>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9]">
                       Your reasoning: <span className="italic">&ldquo;{m.studentReasoning}&rdquo;</span>
                     </p>
-                    <p className="text-xs text-slate-700 leading-relaxed">
+                    <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9] leading-relaxed">
                       Correction: {m.correctiveExplanation}
                     </p>
                   </div>
                 ))}
               </div>
             )}
-          </section>
+          </SurfaceCard>
         </div>
       )}
     </AppShell>

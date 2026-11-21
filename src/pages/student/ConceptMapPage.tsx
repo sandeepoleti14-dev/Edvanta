@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
 import { ConceptGraphView } from '../../components/ConceptGraphView';
+import { SurfaceCard } from '../../components/ui/ThemePrimitives';
 import { apiFetch } from '../../lib/api';
 import { LearnerConceptMastery } from '../../../shared/types';
 
@@ -32,12 +33,12 @@ export function ConceptMapPage() {
   return (
     <AppShell title="Concept Knowledge Graph">
       {loading ? (
-        <div className="h-[480px] rounded-xl bg-white border border-slate-200 animate-pulse" />
+        <div className="h-[480px] rounded-2xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] animate-pulse" />
       ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-white p-6 flex items-center gap-3 text-sm text-[#DC2626]">
+        <SurfaceCard className="p-6 flex items-center gap-3 text-sm text-[#E5484D] dark:text-[#F87171]">
           <AlertCircle className="h-5 w-5" />
           <span>{error}</span>
-        </div>
+        </SurfaceCard>
       ) : (
         <ConceptGraphView
           concepts={concepts}

@@ -150,14 +150,48 @@ export function initializeDatabase(): void {
       completed_at TEXT,
       PRIMARY KEY (student_id, concept_id)
     );
+
+    CREATE TABLE IF NOT EXISTS student_flashcard_progress (
+      student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      card_id TEXT NOT NULL,
+      confidence TEXT NOT NULL CHECK(confidence IN ('new', 'review', 'known')) DEFAULT 'new',
+      review_count INTEGER NOT NULL DEFAULT 0,
+      last_reviewed_at TEXT,
+      PRIMARY KEY (student_id, card_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_saved_notes (
+      student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      concept_id INTEGER NOT NULL REFERENCES concepts(id) ON DELETE CASCADE,
+      saved_at TEXT NOT NULL,
+      PRIMARY KEY (student_id, concept_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS mock_exam_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      total_questions INTEGER NOT NULL,
+      correct_count INTEGER NOT NULL,
+      score_percent INTEGER NOT NULL,
+      duration_used_seconds INTEGER NOT NULL,
+      readiness_tier TEXT NOT NULL,
+      result_json TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
-  // Safe migration for existing databases: add last_activity_date on users if missing
+  // Safe migration for existing databases: add last_activity_date & longest_streak_days on users if missing
   const userColumns = db.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>;
   if (!userColumns.some((col) => col.name === 'last_activity_date')) {
     db.exec('ALTER TABLE users ADD COLUMN last_activity_date TEXT;');
     db.exec(
       "UPDATE users SET last_activity_date = substr(last_active_at, 1, 10) WHERE last_active_at IS NOT NULL AND last_activity_date IS NULL;"
+    );
+  }
+  if (!userColumns.some((col) => col.name === 'longest_streak_days')) {
+    db.exec('ALTER TABLE users ADD COLUMN longest_streak_days INTEGER NOT NULL DEFAULT 1;');
+    db.exec(
+      'UPDATE users SET longest_streak_days = CASE WHEN streak_days > 1 THEN streak_days ELSE 1 END;'
     );
   }
 
@@ -573,6 +607,33 @@ function backfillStudentEngagementData(): void {
         const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
         for (const c of starterConcepts) {
           insertMod.run(s.id, c.id, twoDaysAgo);
+        }
+      }
+
+      const existingFlashcards = db
+        .prepare(`SELECT COUNT(*) as cnt FROM student_flashcard_progress WHERE student_id = ?`)
+        .get(s.id) as { cnt: number };
+      if (existingFlashcards.cnt === 0) {
+        const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+        const insertFc = db.prepare(`
+          INSERT OR IGNORE INTO student_flashcard_progress (student_id, card_id, confidence, review_count, last_reviewed_at)
+          VALUES (?, ?, ?, 1, ?)
+        `);
+        insertFc.run(s.id, 'fc-current-1', 'known', twoDaysAgo);
+        insertFc.run(s.id, 'fc-current-2', 'known', twoDaysAgo);
+        insertFc.run(s.id, 'fc-ohms-2', 'review', twoDaysAgo);
+      }
+
+      const existingNotes = db
+        .prepare(`SELECT COUNT(*) as cnt FROM student_saved_notes WHERE student_id = ?`)
+        .get(s.id) as { cnt: number };
+      if (existingNotes.cnt === 0) {
+        const starterConcept = db
+          .prepare(`SELECT id FROM concepts WHERE slug = 'electric-current' LIMIT 1`)
+          .get() as { id: number } | undefined;
+        if (starterConcept) {
+          db.prepare(`INSERT OR IGNORE INTO student_saved_notes (student_id, concept_id, saved_at) VALUES (?, ?, ?)`)
+            .run(s.id, starterConcept.id, nowIso);
         }
       }
     }

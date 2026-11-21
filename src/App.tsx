@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { CompanionProvider } from './context/CompanionContext';
 import { LandingPage } from './pages/LandingPage';
@@ -8,6 +9,8 @@ import { AuthPage } from './pages/AuthPage';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import { StudentLearning } from './pages/student/StudentLearning';
 import { LearningModulesPage } from './pages/student/LearningModulesPage';
+import { FlashcardsPage } from './pages/student/FlashcardsPage';
+import { MockExamPage } from './pages/student/MockExamPage';
 import { AchievementsPage } from './pages/student/AchievementsPage';
 import { DiagnosticPage } from './pages/student/DiagnosticPage';
 import { PracticePage } from './pages/student/PracticePage';
@@ -40,7 +43,7 @@ function ProtectedRoute({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F5F7FC] text-sm text-slate-600">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F6F7FC] dark:bg-[#111322] text-sm text-[#4E5674] dark:text-[#B4BDD9]">
         <AppIcon size={44} variant="dark" />
         <span>Loading EDVANTA workspace...</span>
       </div>
@@ -110,144 +113,162 @@ function BrandIntroGate() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <CompanionProvider>
-          <BrowserRouter>
-            <BrandIntroGate />
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<AuthPage />} />
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <CompanionProvider>
+            <BrowserRouter>
+              <BrandIntroGate />
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/auth" element={<AuthPage />} />
 
-              {/* Student Routes */}
+                {/* Student Routes */}
+                <Route
+                  path="/student/dashboard"
+                  element={
+                    <ProtectedRoute role="student">
+                      <StudentDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/modules"
+                  element={
+                    <ProtectedRoute role="student">
+                      <LearningModulesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/flashcards"
+                  element={
+                    <ProtectedRoute role="student">
+                      <FlashcardsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/mock-exam"
+                  element={
+                    <ProtectedRoute role="student">
+                      <MockExamPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/learning"
+                  element={
+                    <ProtectedRoute role="student">
+                      <StudentLearning />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/student/achievements"
+                  element={
+                    <ProtectedRoute role="student">
+                      <AchievementsPage />
+                    </ProtectedRoute>
+                  }
+                />
               <Route
-                path="/student/dashboard"
+                path="/student/diagnostic"
                 element={
                   <ProtectedRoute role="student">
-                    <StudentDashboard />
+                    <DiagnosticPage />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/student/modules"
+                path="/student/practice"
                 element={
                   <ProtectedRoute role="student">
-                    <LearningModulesPage />
+                    <PracticePage />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/student/learning"
+                path="/student/concept-map"
                 element={
                   <ProtectedRoute role="student">
-                    <StudentLearning />
+                    <ConceptMapPage />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/student/achievements"
+                path="/student/revisions"
                 element={
                   <ProtectedRoute role="student">
-                    <AchievementsPage />
+                    <RevisionPlannerPage />
                   </ProtectedRoute>
                 }
               />
-            <Route
-              path="/student/diagnostic"
-              element={
-                <ProtectedRoute role="student">
-                  <DiagnosticPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/practice"
-              element={
-                <ProtectedRoute role="student">
-                  <PracticePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/concept-map"
-              element={
-                <ProtectedRoute role="student">
-                  <ConceptMapPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/revisions"
-              element={
-                <ProtectedRoute role="student">
-                  <RevisionPlannerPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/analytics"
-              element={
-                <ProtectedRoute role="student">
-                  <AnalyticsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student/settings"
-              element={
-                <ProtectedRoute role="student">
-                  <ProfileSettingsPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/student/analytics"
+                element={
+                  <ProtectedRoute role="student">
+                    <AnalyticsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/settings"
+                element={
+                  <ProtectedRoute role="student">
+                    <ProfileSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Teacher Routes */}
-            <Route
-              path="/teacher/overview"
-              element={
-                <ProtectedRoute role="teacher">
-                  <TeacherOverview />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/students"
-              element={
-                <ProtectedRoute role="teacher">
-                  <TeacherStudents />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/concepts"
-              element={
-                <ProtectedRoute role="teacher">
-                  <TeacherConcepts />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/misconceptions"
-              element={
-                <ProtectedRoute role="teacher">
-                  <TeacherMisconceptions />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/reports"
-              element={
-                <ProtectedRoute role="teacher">
-                  <TeacherReports />
-                </ProtectedRoute>
-              }
-            />
+              {/* Teacher Routes */}
+              <Route
+                path="/teacher/overview"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <TeacherOverview />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/students"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <TeacherStudents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/concepts"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <TeacherConcepts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/misconceptions"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <TeacherMisconceptions />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher/reports"
+                element={
+                  <ProtectedRoute role="teacher">
+                    <TeacherReports />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </CompanionProvider>
-      </AuthProvider>
-    </ToastProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </CompanionProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }

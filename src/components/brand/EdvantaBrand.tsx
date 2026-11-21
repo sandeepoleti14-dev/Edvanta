@@ -1,7 +1,7 @@
 import React, { useId } from 'react';
 import { Link } from 'react-router-dom';
 
-export type BrandSurfaceVariant = 'light' | 'dark' | 'monochrome';
+export type BrandSurfaceVariant = 'auto' | 'light' | 'dark' | 'monochrome';
 
 interface SymbolProps {
   size?: number;
@@ -16,16 +16,22 @@ interface SymbolProps {
  * - Interlocking neural pathway bridge (adaptive technology & conceptual linking)
  * - Crown apex node (intelligence & mastery milestone)
  */
-export function EdvantaSymbol({ size = 32, variant = 'light', className = '' }: SymbolProps) {
+export function EdvantaSymbol({ size = 32, variant = 'auto', className = '' }: SymbolProps) {
   const uid = useId().replace(/:/g, '');
   const gradId = `edvanta-grad-${uid}`;
 
   const primaryStroke =
-    variant === 'dark' ? '#FFFFFF' : variant === 'monochrome' ? 'currentColor' : '#101827';
+    variant === 'dark'
+      ? '#FFFFFF'
+      : variant === 'monochrome'
+      ? 'currentColor'
+      : variant === 'auto'
+      ? 'currentColor'
+      : '#14172B';
   const accentStroke = variant === 'monochrome' ? 'currentColor' : `url(#${gradId})`;
-  const leftNodeFill = variant === 'monochrome' ? 'currentColor' : '#526BFF';
-  const rightNodeFill = variant === 'monochrome' ? 'currentColor' : '#8B6CFF';
-  const centerFill = variant === 'dark' ? '#101827' : '#FFFFFF';
+  const leftNodeFill = variant === 'monochrome' ? 'currentColor' : '#7055F7';
+  const rightNodeFill = variant === 'monochrome' ? 'currentColor' : '#35C9D8';
+  const centerFill = variant === 'dark' ? '#111322' : variant === 'auto' ? 'var(--bg-surface, #FFFFFF)' : '#FFFFFF';
   const centerStroke = variant === 'monochrome' ? 'currentColor' : `url(#${gradId})`;
 
   return (
@@ -35,14 +41,15 @@ export function EdvantaSymbol({ size = 32, variant = 'light', className = '' }: 
       viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`${variant === 'auto' ? 'text-[#14172B] dark:text-white' : ''} ${className}`}
       aria-hidden="true"
     >
       {variant !== 'monochrome' && (
         <defs>
           <linearGradient id={gradId} x1="12" y1="50" x2="52" y2="12" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#526BFF" />
-            <stop offset="100%" stopColor="#8B6CFF" />
+            <stop offset="0%" stopColor="#7055F7" />
+            <stop offset="55%" stopColor="#477BFF" />
+            <stop offset="100%" stopColor="#35C9D8" />
           </linearGradient>
         </defs>
       )}
@@ -98,13 +105,15 @@ export function AppIcon({
   className = '',
 }: {
   size?: number;
-  variant?: 'dark' | 'light';
+  variant?: 'auto' | 'dark' | 'light';
   className?: string;
 }) {
   const bgClass =
     variant === 'dark'
-      ? 'bg-[#101827] border border-slate-700/80 shadow-sm'
-      : 'bg-white border border-slate-200 shadow-sm';
+      ? 'bg-[#111322] border border-[#2B3150] shadow-sm'
+      : variant === 'auto'
+      ? 'bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] shadow-sm'
+      : 'bg-white border border-[#E2E6F3] shadow-sm';
 
   return (
     <span
@@ -134,16 +143,28 @@ const SIZE_MAP = {
  * Primary horizontal EDVANTA logo combining the original neural apex symbol and geometric wordmark.
  */
 export function EdvantaLogo({
-  variant = 'light',
+  variant = 'auto',
   size = 'md',
   showTagline = false,
   className = '',
 }: LogoProps) {
   const cfg = SIZE_MAP[size];
   const textColor =
-    variant === 'dark' ? 'text-white' : variant === 'monochrome' ? 'text-current' : 'text-[#101827]';
+    variant === 'dark'
+      ? 'text-white'
+      : variant === 'monochrome'
+      ? 'text-current'
+      : variant === 'auto'
+      ? 'text-[#14172B] dark:text-white'
+      : 'text-[#14172B]';
   const taglineColor =
-    variant === 'dark' ? 'text-slate-300' : variant === 'monochrome' ? 'text-current opacity-75' : 'text-slate-500';
+    variant === 'dark'
+      ? 'text-[#B4BDD9]'
+      : variant === 'monochrome'
+      ? 'text-current opacity-75'
+      : variant === 'auto'
+      ? 'text-[#4E5674] dark:text-[#B4BDD9]'
+      : 'text-[#4E5674]';
 
   return (
     <span className={`inline-flex items-center ${cfg.gap} whitespace-nowrap shrink-0 ${className}`}>
@@ -165,7 +186,7 @@ export function EdvantaLogo({
 interface BrandHeaderProps {
   rightSlot?: React.ReactNode;
   centerNav?: React.ReactNode;
-  variant?: 'light' | 'dark';
+  variant?: 'auto' | 'light' | 'dark';
   sticky?: boolean;
 }
 
@@ -175,22 +196,28 @@ interface BrandHeaderProps {
 export function BrandHeader({
   rightSlot,
   centerNav,
-  variant = 'light',
+  variant = 'auto',
   sticky = true,
 }: BrandHeaderProps) {
   const surface =
     variant === 'dark'
-      ? 'bg-[#101827]/95 border-slate-800 text-white'
-      : 'bg-white/95 border-slate-200 text-[#101827]';
+      ? 'bg-[#111322]/95 border-[#2B3150] text-white'
+      : variant === 'auto'
+      ? 'bg-white/90 dark:bg-[#181B2E]/90 border-[#E2E6F3] dark:border-[#2B3150] text-[#14172B] dark:text-[#F4F6FF]'
+      : 'bg-white/95 border-[#E2E6F3] text-[#14172B]';
 
   return (
-    <header className={`${sticky ? 'sticky top-0 z-40' : ''} backdrop-blur border-b ${surface}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-8">
-        <Link to="/" aria-label="EDVANTA home" className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526BFF] rounded-lg">
+    <header className={`${sticky ? 'sticky top-0 z-40' : ''} backdrop-blur border-b transition-colors ${surface}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-4 sm:gap-8">
+        <Link
+          to="/"
+          aria-label="EDVANTA home"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7055F7] rounded-lg shrink-0"
+        >
           <EdvantaLogo variant={variant} size="md" />
         </Link>
         {centerNav}
-        {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
+        {rightSlot ? <div className="shrink-0 flex items-center gap-2 sm:gap-3">{rightSlot}</div> : null}
       </div>
     </header>
   );

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
-import { CompanionMood, Difficulty } from '../../shared/types';
+import { CompanionMood, Difficulty, MockExamCoachAnalysis, MockExamConceptBreakdown } from '../../shared/types';
 import {
   analyzeReasoningDeterministic,
   FallbackAnalysisInput,
@@ -14,21 +14,44 @@ import {
   sanitizeCompanionActions,
 } from './companionBrain';
 
+import {
+  formatGeminiNotice,
+  getGeminiCircuitState,
+  recordGeminiFailure,
+  runWithGeminiRetry,
+} from './geminiErrorHandler';
+
 const MODEL_NAME = 'gemini-4-hydrogen';
 
-function getGeminiClient(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
+interface GeminiClientLookup {
+  ai: GoogleGenAI | null;
+  apiKey: string;
+  notice: string | null;
+}
+
+function getGeminiClientState(): GeminiClientLookup {
+  const apiKey = process.env.GEMINI_API_KEY?.trim() ?? '';
   if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
-    return null;
+    return { ai: null, apiKey: '', notice: formatGeminiNotice('missing_key') };
   }
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
+
+  const circuit = getGeminiCircuitState(apiKey);
+  if (circuit) {
+    return { ai: null, apiKey, notice: circuit.notice };
+  }
+
+  return {
+    ai: new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
       },
-    },
-  });
+    }),
+    apiKey,
+    notice: null,
+  };
 }
 
 export interface GeneratedQuestionPayload {
@@ -40,17 +63,22 @@ export interface GeneratedQuestionPayload {
   misconceptionIndicators: string[];
 }
 
-export async function generateQuestionWithGemini(params: {
+export interface QuestionGenerationResult {
+  question: GeneratedQuestionPayload | null;
+  aiNotice?: string;
+}
+
+export async function generateQuestionWithGeminiResult(params: {
   conceptName: string;
   conceptDescription: string;
   keyFormula: string;
   difficulty: Difficulty;
   recentMisconceptions: string[];
   existingQuestions: string[];
-}): Promise<GeneratedQuestionPayload | null> {
-  const ai = getGeminiClient();
+}): Promise<QuestionGenerationResult> {
+  const { ai, apiKey, notice } = getGeminiClientState();
   if (!ai) {
-    return null;
+    return { question: null, aiNotice: notice ?? undefined };
   }
 
   const prompt = `You are a Class 10 Physics curriculum specialist creating an adaptive multiple-choice question.
@@ -69,43 +97,45 @@ Requirements:
 - Provide a concise explanation, the expected student reasoning, and 2-3 specific misconception indicators that distractors test.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      config: {
-        systemInstruction:
-          'Return strictly valid JSON matching the schema. Keep numbers clean and physically accurate for Class 10 Physics.',
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            questionText: { type: Type.STRING },
-            options: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
+    const response = await runWithGeminiRetry(() =>
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'Return strictly valid JSON matching the schema. Keep numbers clean and physically accurate for Class 10 Physics.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              questionText: { type: Type.STRING },
+              options: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+              correctIndex: { type: Type.INTEGER },
+              explanation: { type: Type.STRING },
+              expectedReasoning: { type: Type.STRING },
+              misconceptionIndicators: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
             },
-            correctIndex: { type: Type.INTEGER },
-            explanation: { type: Type.STRING },
-            expectedReasoning: { type: Type.STRING },
-            misconceptionIndicators: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-            },
+            required: [
+              'questionText',
+              'options',
+              'correctIndex',
+              'explanation',
+              'expectedReasoning',
+              'misconceptionIndicators',
+            ],
           },
-          required: [
-            'questionText',
-            'options',
-            'correctIndex',
-            'explanation',
-            'expectedReasoning',
-            'misconceptionIndicators',
-          ],
         },
-      },
-    });
+      })
+    );
 
     const raw = (response.text ?? '').trim();
-    if (!raw) return null;
+    if (!raw) return { question: null, aiNotice: formatGeminiNotice('unknown') };
     const parsed = JSON.parse(raw) as Partial<GeneratedQuestionPayload>;
 
     if (
@@ -123,33 +153,47 @@ Requirements:
       typeof parsed.expectedReasoning !== 'string' ||
       parsed.expectedReasoning.trim().length < 10
     ) {
-      return null;
+      return { question: null, aiNotice: formatGeminiNotice('unknown') };
     }
 
     const uniqueOpts = new Set(parsed.options.map((o) => o.trim().toLowerCase()));
     if (uniqueOpts.size < 4) {
-      return null;
+      return { question: null, aiNotice: formatGeminiNotice('unknown') };
     }
 
     return {
-      questionText: parsed.questionText.trim(),
-      options: [
-        parsed.options[0].trim(),
-        parsed.options[1].trim(),
-        parsed.options[2].trim(),
-        parsed.options[3].trim(),
-      ],
-      correctIndex: parsed.correctIndex,
-      explanation: parsed.explanation.trim(),
-      expectedReasoning: parsed.expectedReasoning.trim(),
-      misconceptionIndicators: Array.isArray(parsed.misconceptionIndicators)
-        ? parsed.misconceptionIndicators.filter((m) => typeof m === 'string' && m.trim().length > 0).slice(0, 4)
-        : [],
+      question: {
+        questionText: parsed.questionText.trim(),
+        options: [
+          parsed.options[0].trim(),
+          parsed.options[1].trim(),
+          parsed.options[2].trim(),
+          parsed.options[3].trim(),
+        ],
+        correctIndex: parsed.correctIndex,
+        explanation: parsed.explanation.trim(),
+        expectedReasoning: parsed.expectedReasoning.trim(),
+        misconceptionIndicators: Array.isArray(parsed.misconceptionIndicators)
+          ? parsed.misconceptionIndicators.filter((m) => typeof m === 'string' && m.trim().length > 0).slice(0, 4)
+          : [],
+      },
     };
   } catch (err) {
-    console.warn('Gemini question generation unavailable, using curated bank:', err instanceof Error ? err.message : 'Unknown error');
-    return null;
+    const classified = recordGeminiFailure(apiKey, err);
+    return { question: null, aiNotice: classified.userNotice };
   }
+}
+
+export async function generateQuestionWithGemini(params: {
+  conceptName: string;
+  conceptDescription: string;
+  keyFormula: string;
+  difficulty: Difficulty;
+  recentMisconceptions: string[];
+  existingQuestions: string[];
+}): Promise<GeneratedQuestionPayload | null> {
+  const result = await generateQuestionWithGeminiResult(params);
+  return result.question;
 }
 
 export async function analyzeStudentReasoning(input: FallbackAnalysisInput): Promise<ReasoningAnalysisResult> {
@@ -158,7 +202,7 @@ export async function analyzeStudentReasoning(input: FallbackAnalysisInput): Pro
     return analyzeReasoningDeterministic(input);
   }
 
-  const ai = getGeminiClient();
+  const { ai, apiKey } = getGeminiClientState();
   if (!ai) {
     return analyzeReasoningDeterministic(input);
   }
@@ -179,42 +223,44 @@ Task:
 3. Provide a clear, encouraging corrective explanation tailored to the student's exact reasoning.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      config: {
-        systemInstruction:
-          'You are a diagnostic Physics tutor. Return structured JSON strictly matching the schema. Be concise, accurate, and never invent a misconception if the student reasoning is unclear or off-topic.',
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            confidenceStatus: {
-              type: Type.STRING,
-              description: 'One of: identified, uncertain, none',
+    const response = await runWithGeminiRetry(() =>
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are a diagnostic Physics tutor. Return structured JSON strictly matching the schema. Be concise, accurate, and never invent a misconception if the student reasoning is unclear or off-topic.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              confidenceStatus: {
+                type: Type.STRING,
+                description: 'One of: identified, uncertain, none',
+              },
+              misconceptionDetected: { type: Type.BOOLEAN },
+              misconceptionTitle: { type: Type.STRING },
+              conceptualError: { type: Type.STRING },
+              correctiveExplanation: { type: Type.STRING },
+              reasoningQuality: {
+                type: Type.STRING,
+                description: 'One of: aligned, partial, flawed, insufficient',
+              },
+              recommendedFocus: { type: Type.STRING },
             },
-            misconceptionDetected: { type: Type.BOOLEAN },
-            misconceptionTitle: { type: Type.STRING },
-            conceptualError: { type: Type.STRING },
-            correctiveExplanation: { type: Type.STRING },
-            reasoningQuality: {
-              type: Type.STRING,
-              description: 'One of: aligned, partial, flawed, insufficient',
-            },
-            recommendedFocus: { type: Type.STRING },
+            required: [
+              'confidenceStatus',
+              'misconceptionDetected',
+              'misconceptionTitle',
+              'conceptualError',
+              'correctiveExplanation',
+              'reasoningQuality',
+              'recommendedFocus',
+            ],
           },
-          required: [
-            'confidenceStatus',
-            'misconceptionDetected',
-            'misconceptionTitle',
-            'conceptualError',
-            'correctiveExplanation',
-            'reasoningQuality',
-            'recommendedFocus',
-          ],
         },
-      },
-    });
+      })
+    );
 
     const raw = (response.text ?? '').trim();
     if (!raw) {
@@ -272,7 +318,7 @@ Task:
           : `Practice ${input.conceptName} with step-by-step reasoning.`,
     };
   } catch (err) {
-    console.warn('Gemini reasoning analysis fallback engaged:', err instanceof Error ? err.message : 'Unknown error');
+    recordGeminiFailure(apiKey, err);
     return analyzeReasoningDeterministic(input);
   }
 }
@@ -280,7 +326,7 @@ Task:
 export async function chatWithStudyCompanion(
   params: CompanionStudentSnapshot
 ): Promise<CompanionStructuredResponse> {
-  const ai = getGeminiClient();
+  const { ai, apiKey } = getGeminiClientState();
   if (!ai) {
     return buildInteractiveFallbackResponse(params);
   }
@@ -328,7 +374,9 @@ ${conceptLines}
 
 Valid EDVANTA App Routes you may return in recommendedActionRoutes:
 - /student/dashboard (Dashboard Overview)
-- /student/modules (Learning Modules) or /student/modules?conceptSlug=<slug>
+- /student/modules (Learning Modules & Journey View) or /student/modules?conceptSlug=<slug>
+- /student/flashcards (Interactive Flashcards) or /student/flashcards?conceptSlug=<slug>
+- /student/mock-exam (Timed Mock Exam & Coach AI Analysis)
 - /student/practice (Adaptive Practice) or /student/practice?conceptId=<id>
 - /student/diagnostic (Diagnostic Test)
 - /student/concept-map (Concept Knowledge Graph)
@@ -350,41 +398,43 @@ Rules:
 4. Provide 2–3 short, natural followUpPrompts (under 40 chars each) tailored to what the student just asked.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-      config: {
-        systemInstruction:
-          'You are Volt, an interactive AI study companion inside EDVANTA for Class 10 Physics (Electricity). Return strictly valid JSON matching the schema.',
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            reply: { type: Type.STRING },
-            mood: {
-              type: Type.STRING,
-              description: 'One of: idle, celebrating, encouraging',
-            },
-            recommendedActionRoutes: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  label: { type: Type.STRING },
-                  targetPath: { type: Type.STRING },
+    const response = await runWithGeminiRetry(() =>
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are Volt, an interactive AI study companion inside EDVANTA for Class 10 Physics (Electricity). Return strictly valid JSON matching the schema.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              reply: { type: Type.STRING },
+              mood: {
+                type: Type.STRING,
+                description: 'One of: idle, celebrating, encouraging',
+              },
+              recommendedActionRoutes: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    label: { type: Type.STRING },
+                    targetPath: { type: Type.STRING },
+                  },
+                  required: ['label', 'targetPath'],
                 },
-                required: ['label', 'targetPath'],
+              },
+              followUpPrompts: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
               },
             },
-            followUpPrompts: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-            },
+            required: ['reply', 'mood', 'recommendedActionRoutes', 'followUpPrompts'],
           },
-          required: ['reply', 'mood', 'recommendedActionRoutes', 'followUpPrompts'],
         },
-      },
-    });
+      })
+    );
 
     const raw = (response.text ?? '').trim();
     if (!raw) {
@@ -427,9 +477,104 @@ Rules:
           : ['What should I study next?', 'Give me a practice question'],
     };
   } catch (err) {
-    console.warn('Gemini study companion fallback engaged:', err instanceof Error ? err.message : 'Unknown error');
+    recordGeminiFailure(apiKey, err);
     return buildInteractiveFallbackResponse(params);
   }
 }
+
+export async function enrichMockExamCoachWithGemini(params: {
+  studentName: string;
+  scorePercent: number;
+  correctCount: number;
+  totalQuestions: number;
+  durationUsedSeconds: number;
+  conceptBreakdown: MockExamConceptBreakdown[];
+  misconceptionsDetected: string[];
+  deterministicCoach: MockExamCoachAnalysis;
+}): Promise<MockExamCoachAnalysis> {
+  const { ai, apiKey } = getGeminiClientState();
+  if (!ai) {
+    return params.deterministicCoach;
+  }
+
+  const breakdownLines = params.conceptBreakdown
+    .map((c) => `- ${c.conceptName}: ${c.correctCount}/${c.totalQuestions} (${c.accuracy}%), mastery ${c.masteryBefore}% -> ${c.masteryAfter}%`)
+    .join('\n');
+
+  const prompt = `You are EDVANTA Coach AI analyzing a Class 10 Physics (Electricity) timed mock exam.
+Student: ${params.studentName}
+Score: ${params.scorePercent}% (${params.correctCount}/${params.totalQuestions})
+Time used: ${Math.floor(params.durationUsedSeconds / 60)}m ${params.durationUsedSeconds % 60}s
+Concept performance:
+${breakdownLines}
+Misconceptions detected: ${params.misconceptionsDetected.join('; ') || 'None explicitly flagged'}
+
+Write concise, high-impact coaching feedback:
+- headline: crisp 6-10 word diagnostic headline
+- summary: 2 sentences summarizing performance and highest-leverage gap
+- timeManagementNote: 1-2 sentences on pacing (${Math.round(params.durationUsedSeconds / Math.max(1, params.totalQuestions))}s/question)
+- roadmapSteps: exactly 3 concrete study actions for the next session.`;
+
+  try {
+    const response = await runWithGeminiRetry(() =>
+      ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+          systemInstruction: 'Return strictly valid JSON matching the schema. Be encouraging, specific to Physics Electricity, and concise.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              headline: { type: Type.STRING },
+              summary: { type: Type.STRING },
+              timeManagementNote: { type: Type.STRING },
+              roadmapSteps: {
+                type: Type.ARRAY,
+                items: { type: Type.STRING },
+              },
+            },
+            required: ['headline', 'summary', 'timeManagementNote', 'roadmapSteps'],
+          },
+        },
+      })
+    );
+
+    const raw = (response.text ?? '').trim();
+    if (!raw) return params.deterministicCoach;
+    const parsed = JSON.parse(raw) as {
+      headline?: string;
+      summary?: string;
+      timeManagementNote?: string;
+      roadmapSteps?: string[];
+    };
+
+    const headline = typeof parsed.headline === 'string' && parsed.headline.trim().length > 8
+      ? parsed.headline.trim()
+      : params.deterministicCoach.headline;
+    const summary = typeof parsed.summary === 'string' && parsed.summary.trim().length > 15
+      ? parsed.summary.trim()
+      : params.deterministicCoach.summary;
+    const timeManagementNote = typeof parsed.timeManagementNote === 'string' && parsed.timeManagementNote.trim().length > 12
+      ? parsed.timeManagementNote.trim()
+      : params.deterministicCoach.timeManagementNote;
+    const roadmapSteps = Array.isArray(parsed.roadmapSteps)
+      ? parsed.roadmapSteps.filter((s) => typeof s === 'string' && s.trim().length > 8).map((s) => s.trim()).slice(0, 3)
+      : [];
+
+    return {
+      ...params.deterministicCoach,
+      headline,
+      summary,
+      timeManagementNote,
+      roadmapSteps: roadmapSteps.length >= 2 ? roadmapSteps : params.deterministicCoach.roadmapSteps,
+      source: 'gemini',
+    };
+  } catch (err) {
+    recordGeminiFailure(apiKey, err);
+    return params.deterministicCoach;
+  }
+}
+
 
 

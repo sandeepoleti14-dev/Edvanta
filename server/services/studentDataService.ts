@@ -5,18 +5,34 @@ import {
   AuthUser,
   ConceptNode,
   Difficulty,
+  FlashcardConfidence,
+  FlashcardItem,
+  FlashcardsPayload,
+  GamificationSummary,
   LearnerConceptMastery,
   LearningModuleItem,
   MasteryStatus,
   MisconceptionRecord,
+  MockExamHistoryItem,
+  MockExamResultPayload,
   RevisionTask,
   StudentDashboardPayload,
+  StudentJourneyPayload,
 } from '../../shared/types';
 import { db, initializeStudentMasteryRows } from '../db/database';
 import { computeOverallMastery } from './learnerModel';
 import { resolveRevisionStatus } from './revisionScheduler';
 import { computeUpdatedStreak, evaluateAchievements } from './achievementsEngine';
 import { ELECTRICITY_MODULES } from '../curriculum/modules';
+import { ELECTRICITY_FLASHCARDS } from '../curriculum/flashcards';
+import { buildStudyJourney, summarizeFlashcardDeck } from './edurevStudyEngine';
+import {
+  buildLearningQuests,
+  buildWeeklyActivityCalendar,
+  computeActivityXp,
+  computeCompanionTier,
+  computeLearnerLevel,
+} from '../../src/utils/gamificationLogic';
 
 export function getConceptGraphNodes(): ConceptNode[] {
   const concepts = db
@@ -334,6 +350,9 @@ export function buildStudentDashboard(user: AuthUser): StudentDashboardPayload {
     };
   }
 
+  const achievementsEval = buildAchievementsEvaluation(user.id, true);
+  const gamification = getStudentGamificationSummary(user.id, achievementsEval.totalXp, achievementsEval.streakDays);
+
   return {
     user,
     hasCompletedDiagnostic,
@@ -348,6 +367,7 @@ export function buildStudentDashboard(user: AuthUser): StudentDashboardPayload {
     recentAttempts,
     recommendedActivity,
     progressHistory,
+    gamification,
   };
 }
 
@@ -422,12 +442,157 @@ function buildAchievementsEvaluation(studentId: number, persistNewUnlocks: boole
   };
 }
 
+export function getStudentGamificationSummary(
+  studentId: number,
+  badgeXp?: number,
+  streakDaysOverride?: number
+): GamificationSummary {
+  const userRow = db
+    .prepare(`SELECT streak_days, longest_streak_days FROM users WHERE id = ?`)
+    .get(studentId) as { streak_days: number; longest_streak_days: number | null } | undefined;
+
+  const streakDays = streakDaysOverride ?? userRow?.streak_days ?? 1;
+  const longestStreakDays = Math.max(streakDays, userRow?.longest_streak_days ?? 1);
+
+  const ansStats = db
+    .prepare(
+      `SELECT COUNT(*) as total_attempted, COALESCE(SUM(is_correct), 0) as total_correct
+       FROM student_answers WHERE student_id = ?`
+    )
+    .get(studentId) as { total_attempted: number; total_correct: number };
+
+  const completedModulesCount = (
+    db
+      .prepare(`SELECT COUNT(*) as cnt FROM student_module_progress WHERE student_id = ? AND completed = 1`)
+      .get(studentId) as { cnt: number }
+  ).cnt;
+
+  const knownFlashcardsCount = (
+    db
+      .prepare(`SELECT COUNT(*) as cnt FROM student_flashcard_progress WHERE student_id = ? AND confidence = 'known'`)
+      .get(studentId) as { cnt: number }
+  ).cnt;
+
+  const completedMockExamsCount = (
+    db
+      .prepare(`SELECT COUNT(*) as cnt FROM mock_exam_attempts WHERE student_id = ?`)
+      .get(studentId) as { cnt: number }
+  ).cnt;
+
+  const masteredCount = (
+    db
+      .prepare(`SELECT COUNT(*) as cnt FROM learner_mastery WHERE student_id = ? AND status = 'mastered'`)
+      .get(studentId) as { cnt: number }
+  ).cnt;
+
+  const resolvedMisconceptionsCount = (
+    db
+      .prepare(`SELECT COUNT(*) as cnt FROM misconceptions WHERE student_id = ? AND resolved = 1`)
+      .get(studentId) as { cnt: number }
+  ).cnt;
+
+  const effectiveBadgeXp =
+    typeof badgeXp === 'number' ? badgeXp : buildAchievementsEvaluation(studentId, false).totalXp;
+
+  const totalXp = computeActivityXp({
+    badgeXp: effectiveBadgeXp,
+    totalAttempted: ansStats.total_attempted,
+    correctAttempts: ansStats.total_correct,
+    completedModulesCount,
+    knownFlashcardsCount,
+    completedMockExamsCount,
+  });
+
+  const levelInfo = computeLearnerLevel(totalXp);
+  const companionTier = computeCompanionTier(levelInfo.level);
+
+  const activityCountsByDate: Record<string, number> = {};
+  const addDayRows = (rows: Array<{ day: string | null; cnt: number }>) => {
+    for (const r of rows) {
+      if (!r.day) continue;
+      activityCountsByDate[r.day] = (activityCountsByDate[r.day] ?? 0) + r.cnt;
+    }
+  };
+
+  addDayRows(
+    db
+      .prepare(
+        `SELECT substr(created_at, 1, 10) as day, COUNT(*) as cnt
+         FROM student_answers WHERE student_id = ? GROUP BY substr(created_at, 1, 10)`
+      )
+      .all(studentId) as Array<{ day: string | null; cnt: number }>
+  );
+  addDayRows(
+    db
+      .prepare(
+        `SELECT substr(completed_at, 1, 10) as day, COUNT(*) as cnt
+         FROM student_module_progress WHERE student_id = ? AND completed = 1 AND completed_at IS NOT NULL
+         GROUP BY substr(completed_at, 1, 10)`
+      )
+      .all(studentId) as Array<{ day: string | null; cnt: number }>
+  );
+  addDayRows(
+    db
+      .prepare(
+        `SELECT substr(last_reviewed_at, 1, 10) as day, COUNT(*) as cnt
+         FROM student_flashcard_progress WHERE student_id = ? AND last_reviewed_at IS NOT NULL
+         GROUP BY substr(last_reviewed_at, 1, 10)`
+      )
+      .all(studentId) as Array<{ day: string | null; cnt: number }>
+  );
+  addDayRows(
+    db
+      .prepare(
+        `SELECT substr(created_at, 1, 10) as day, COUNT(*) as cnt
+         FROM mock_exam_attempts WHERE student_id = ? GROUP BY substr(created_at, 1, 10)`
+      )
+      .all(studentId) as Array<{ day: string | null; cnt: number }>
+  );
+
+  const nowIso = new Date().toISOString();
+  const todayKey = nowIso.slice(0, 10);
+  const weeklyActivity = buildWeeklyActivityCalendar({
+    activityCountsByDate,
+    referenceDateIso: nowIso,
+  });
+
+  const dailyGoalTarget = 5;
+  const dailyGoalCompleted = activityCountsByDate[todayKey] ?? 0;
+
+  const quests = buildLearningQuests({
+    todayActions: dailyGoalCompleted,
+    dailyGoalTarget,
+    completedModulesCount,
+    knownFlashcardsCount,
+    masteredCount,
+    resolvedMisconceptionsCount,
+  });
+
+  return {
+    level: levelInfo.level,
+    levelTitle: levelInfo.levelTitle,
+    totalXp: levelInfo.totalXp,
+    xpInLevel: levelInfo.xpInLevel,
+    xpForNextLevel: levelInfo.xpForNextLevel,
+    xpRemaining: levelInfo.xpRemaining,
+    progressPercent: levelInfo.progressPercent,
+    streakDays,
+    longestStreakDays,
+    dailyGoalTarget,
+    dailyGoalCompleted,
+    weeklyActivity,
+    companionTier,
+    quests,
+  };
+}
+
 export function getStudentAchievements(studentId: number): AchievementsPayload {
   const { streakDays, totalXp, unlockedCount, totalCount, badges } = buildAchievementsEvaluation(
     studentId,
     true
   );
-  return { streakDays, totalXp, unlockedCount, totalCount, badges };
+  const gamification = getStudentGamificationSummary(studentId, totalXp, streakDays);
+  return { streakDays, totalXp, unlockedCount, totalCount, badges, gamification };
 }
 
 export function syncStudentStreakAndAchievements(studentId: number): {
@@ -436,23 +601,24 @@ export function syncStudentStreakAndAchievements(studentId: number): {
   achievements: AchievementsPayload;
 } {
   const userRow = db
-    .prepare(`SELECT streak_days, last_activity_date FROM users WHERE id = ?`)
-    .get(studentId) as { streak_days: number; last_activity_date: string | null } | undefined;
+    .prepare(`SELECT streak_days, longest_streak_days, last_activity_date FROM users WHERE id = ?`)
+    .get(studentId) as
+    | { streak_days: number; longest_streak_days: number | null; last_activity_date: string | null }
+    | undefined;
 
   const { newStreak, activityDateKey } = computeUpdatedStreak({
     currentStreak: userRow?.streak_days ?? 0,
     lastActivityDate: userRow?.last_activity_date ?? null,
   });
+  const nextLongest = Math.max(userRow?.longest_streak_days ?? 1, newStreak);
 
   const nowIso = new Date().toISOString();
-  db.prepare(`UPDATE users SET streak_days = ?, last_activity_date = ?, last_active_at = ? WHERE id = ?`).run(
-    newStreak,
-    activityDateKey,
-    nowIso,
-    studentId
-  );
+  db.prepare(
+    `UPDATE users SET streak_days = ?, longest_streak_days = ?, last_activity_date = ?, last_active_at = ? WHERE id = ?`
+  ).run(newStreak, nextLongest, activityDateKey, nowIso, studentId);
 
   const evaluated = buildAchievementsEvaluation(studentId, true);
+  const gamification = getStudentGamificationSummary(studentId, evaluated.totalXp, newStreak);
   return {
     streakDays: newStreak,
     newlyUnlocked: evaluated.newlyUnlocked,
@@ -462,6 +628,7 @@ export function syncStudentStreakAndAchievements(studentId: number): {
       unlockedCount: evaluated.unlockedCount,
       totalCount: evaluated.totalCount,
       badges: evaluated.badges,
+      gamification,
     },
   };
 }
@@ -533,4 +700,200 @@ export function completeStudentModule(
     streakDays: synced.streakDays,
   };
 }
+
+export function getStudentFlashcards(studentId: number): FlashcardsPayload {
+  const concepts = getConceptGraphNodes();
+  const bySlug = new Map(concepts.map((c) => [c.slug, c]));
+
+  const progressRows = db
+    .prepare(
+      `SELECT card_id, confidence, review_count, last_reviewed_at
+       FROM student_flashcard_progress WHERE student_id = ?`
+    )
+    .all(studentId) as Array<{
+    card_id: string;
+    confidence: FlashcardConfidence;
+    review_count: number;
+    last_reviewed_at: string | null;
+  }>;
+  const progMap = new Map(progressRows.map((p) => [p.card_id, p]));
+
+  const cards: FlashcardItem[] = ELECTRICITY_FLASHCARDS.map((seed) => {
+    const concept = bySlug.get(seed.conceptSlug);
+    const prog = progMap.get(seed.id);
+    return {
+      id: seed.id,
+      conceptId: concept?.id ?? 1,
+      conceptSlug: seed.conceptSlug,
+      conceptName: concept?.name ?? seed.conceptSlug,
+      category: seed.category,
+      frontPrompt: seed.frontPrompt,
+      backAnswer: seed.backAnswer,
+      formulaHint: seed.formulaHint,
+      examTip: seed.examTip,
+      confidence: prog?.confidence ?? 'new',
+      reviewCount: prog?.review_count ?? 0,
+      lastReviewedAt: prog?.last_reviewed_at ?? null,
+    };
+  });
+
+  return {
+    cards,
+    stats: summarizeFlashcardDeck(cards),
+  };
+}
+
+export function reviewStudentFlashcard(
+  studentId: number,
+  cardId: string,
+  confidence: 'known' | 'review'
+): FlashcardsPayload {
+  const nowIso = new Date().toISOString();
+  db.prepare(
+    `INSERT INTO student_flashcard_progress (student_id, card_id, confidence, review_count, last_reviewed_at)
+     VALUES (?, ?, ?, 1, ?)
+     ON CONFLICT(student_id, card_id) DO UPDATE SET
+       confidence = excluded.confidence,
+       review_count = student_flashcard_progress.review_count + 1,
+       last_reviewed_at = excluded.last_reviewed_at`
+  ).run(studentId, cardId, confidence, nowIso);
+
+  const synced = syncStudentStreakAndAchievements(studentId);
+  const deck = getStudentFlashcards(studentId);
+  return {
+    ...deck,
+    streakDays: synced.streakDays,
+  };
+}
+
+export function getStudentSavedNoteConceptIds(studentId: number): number[] {
+  const rows = db
+    .prepare(`SELECT concept_id FROM student_saved_notes WHERE student_id = ? ORDER BY saved_at DESC`)
+    .all(studentId) as Array<{ concept_id: number }>;
+  return rows.map((r) => r.concept_id);
+}
+
+export function toggleStudentSavedNote(
+  studentId: number,
+  conceptId: number
+): { saved: boolean; savedNoteConceptIds: number[] } {
+  const existing = db
+    .prepare(`SELECT concept_id FROM student_saved_notes WHERE student_id = ? AND concept_id = ?`)
+    .get(studentId, conceptId) as { concept_id: number } | undefined;
+
+  if (existing) {
+    db.prepare(`DELETE FROM student_saved_notes WHERE student_id = ? AND concept_id = ?`).run(studentId, conceptId);
+    return { saved: false, savedNoteConceptIds: getStudentSavedNoteConceptIds(studentId) };
+  }
+
+  db.prepare(`INSERT INTO student_saved_notes (student_id, concept_id, saved_at) VALUES (?, ?, ?)`).run(
+    studentId,
+    conceptId,
+    new Date().toISOString()
+  );
+  return { saved: true, savedNoteConceptIds: getStudentSavedNoteConceptIds(studentId) };
+}
+
+export function getStudentJourney(studentId: number): StudentJourneyPayload {
+  const modules = getStudentModules(studentId);
+  const masteries = getStudentConceptMasteries(studentId);
+  const flashcards = getStudentFlashcards(studentId).cards;
+  const savedNoteConceptIds = getStudentSavedNoteConceptIds(studentId);
+
+  return buildStudyJourney({
+    modules,
+    masteries,
+    flashcards,
+    savedNoteConceptIds,
+  });
+}
+
+export function saveMockExamAttempt(
+  studentId: number,
+  result: Omit<MockExamResultPayload, 'attemptId'>
+): MockExamResultPayload {
+  const info = db
+    .prepare(
+      `INSERT INTO mock_exam_attempts (
+        student_id, total_questions, correct_count, score_percent, duration_used_seconds, readiness_tier, result_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      studentId,
+      result.totalQuestions,
+      result.correctCount,
+      result.scorePercent,
+      result.durationUsedSeconds,
+      result.coachAnalysis.readinessTier,
+      '{}',
+      result.completedAt
+    );
+
+  const attemptId = Number(info.lastInsertRowid);
+  const fullPayload: MockExamResultPayload = {
+    ...result,
+    attemptId,
+  };
+  db.prepare(`UPDATE mock_exam_attempts SET result_json = ? WHERE id = ?`).run(JSON.stringify(fullPayload), attemptId);
+  return fullPayload;
+}
+
+export function getMockExamHistory(studentId: number): {
+  history: MockExamHistoryItem[];
+  latestResult: MockExamResultPayload | null;
+} {
+  const rows = db
+    .prepare(
+      `SELECT id, total_questions, correct_count, score_percent, duration_used_seconds, readiness_tier, result_json, created_at
+       FROM mock_exam_attempts
+       WHERE student_id = ?
+       ORDER BY id DESC
+       LIMIT 12`
+    )
+    .all(studentId) as Array<{
+    id: number;
+    total_questions: number;
+    correct_count: number;
+    score_percent: number;
+    duration_used_seconds: number;
+    readiness_tier: MockExamHistoryItem['readinessTier'];
+    result_json: string;
+    created_at: string;
+  }>;
+
+  const history: MockExamHistoryItem[] = rows.map((r) => ({
+    attemptId: r.id,
+    totalQuestions: r.total_questions,
+    correctCount: r.correct_count,
+    scorePercent: r.score_percent,
+    durationUsedSeconds: r.duration_used_seconds,
+    readinessTier: r.readiness_tier,
+    completedAt: r.created_at,
+  }));
+
+  let latestResult: MockExamResultPayload | null = null;
+  if (rows[0]?.result_json) {
+    try {
+      latestResult = JSON.parse(rows[0].result_json) as MockExamResultPayload;
+    } catch {
+      latestResult = null;
+    }
+  }
+
+  return { history, latestResult };
+}
+
+export function getMockExamResultById(studentId: number, attemptId: number): MockExamResultPayload | null {
+  const row = db
+    .prepare(`SELECT result_json FROM mock_exam_attempts WHERE id = ? AND student_id = ?`)
+    .get(attemptId, studentId) as { result_json: string } | undefined;
+
+  if (!row) return null;
+  try {
+    return JSON.parse(row.result_json) as MockExamResultPayload;
+  } catch {
+    return null;
+  }
+}
+
 

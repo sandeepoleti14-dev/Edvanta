@@ -1,4 +1,4 @@
-export const BRAND_INTRO_STORAGE_KEY = 'edvanta_intro_seen_v1';
+let introCompletedInAppSession = false;
 
 export interface IntroTimingConfig {
   backgroundMs: number;
@@ -64,21 +64,19 @@ export function getIntroTiming(prefersReducedMotion: boolean): IntroTimingConfig
   return prefersReducedMotion ? REDUCED_MOTION_TIMING : DEFAULT_INTRO_TIMING;
 }
 
+/**
+ * Tracks intro completion within the current SPA lifecycle so:
+ * - Fresh platform launches / page reloads on `/` always play the signature opening animation.
+ * - Internal route navigation back to `/` does not repeat the animation.
+ */
 export function readIntroSeenFlag(): boolean {
-  try {
-    if (typeof window === 'undefined' || !window.sessionStorage) return false;
-    return window.sessionStorage.getItem(BRAND_INTRO_STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return introCompletedInAppSession;
 }
 
 export function markIntroSeenFlag(): void {
-  try {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem(BRAND_INTRO_STORAGE_KEY, '1');
-    }
-  } catch {
-    // Ignore storage errors in restricted browsing contexts
-  }
+  introCompletedInAppSession = true;
+}
+
+export function resetIntroSeenFlagForTest(): void {
+  introCompletedInAppSession = false;
 }

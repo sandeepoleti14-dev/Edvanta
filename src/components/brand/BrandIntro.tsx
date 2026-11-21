@@ -35,10 +35,10 @@ const AMBIENT_PARTICLES: FloatingParticle[] = [
 ];
 
 const CONVERGING_SEEDS = [
-  { id: 'left', sx: '-72px', sy: '42px', ex: '-18px', ey: '18px', color: '#526BFF', delay: '0.48s' },
-  { id: 'right', sx: '74px', sy: '40px', ex: '18px', ey: '18px', color: '#8B6CFF', delay: '0.52s' },
+  { id: 'left', sx: '-72px', sy: '42px', ex: '-18px', ey: '18px', color: '#477BFF', delay: '0.48s' },
+  { id: 'right', sx: '74px', sy: '40px', ex: '18px', ey: '18px', color: '#7055F7', delay: '0.52s' },
   { id: 'center', sx: '-48px', sy: '-36px', ex: '0px', ey: '0px', color: '#FFFFFF', delay: '0.55s' },
-  { id: 'apex', sx: '46px', sy: '-54px', ex: '0px', ey: '-22px', color: '#8B6CFF', delay: '0.58s' },
+  { id: 'apex', sx: '46px', sy: '-54px', ex: '0px', ey: '-22px', color: '#35C9D8', delay: '0.58s' },
 ];
 
 const WORDMARK_LETTERS = ['E', 'D', 'V', 'A', 'N', 'T', 'A'];
@@ -111,23 +111,23 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
           className="absolute -top-32 left-1/2 -translate-x-1/2 w-[780px] h-[480px] rounded-full opacity-35 blur-3xl"
           style={{
             background:
-              'radial-gradient(circle, rgba(82,107,255,0.45) 0%, rgba(139,108,255,0.18) 45%, rgba(16,24,39,0) 75%)',
+              'radial-gradient(circle, rgba(112,85,247,0.45) 0%, rgba(53,201,216,0.18) 45%, rgba(17,19,34,0) 75%)',
           }}
         />
         <div
           className="absolute -bottom-40 right-1/4 w-[620px] h-[420px] rounded-full opacity-25 blur-3xl"
           style={{
             background:
-              'radial-gradient(circle, rgba(139,108,255,0.4) 0%, rgba(82,107,255,0.12) 50%, rgba(16,24,39,0) 75%)',
+              'radial-gradient(circle, rgba(71,123,255,0.4) 0%, rgba(112,85,247,0.14) 50%, rgba(17,19,34,0) 75%)',
           }}
         />
 
         {AMBIENT_PARTICLES.map((p) => {
           const bg =
             p.tone === 'blue'
-              ? 'bg-[#526BFF]'
+              ? 'bg-[#477BFF]'
               : p.tone === 'violet'
-              ? 'bg-[#8B6CFF]'
+              ? 'bg-[#7055F7]'
               : 'bg-slate-200';
           return (
             <span
@@ -186,7 +186,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
             aria-hidden="true"
             className="absolute inset-2 rounded-full blur-2xl pointer-events-none opacity-0"
             style={{
-              background: 'linear-gradient(135deg, rgba(82,107,255,0.45), rgba(139,108,255,0.38))',
+              background: 'linear-gradient(135deg, rgba(112,85,247,0.45), rgba(53,201,216,0.35))',
               animation: 'edvanta-glow-pulse 0.95s ease-out 1.02s forwards',
             }}
           />
@@ -201,13 +201,14 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
           >
             <defs>
               <linearGradient id="edvanta-intro-grad" x1="12" y1="50" x2="52" y2="10" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#526BFF" />
-                <stop offset="100%" stopColor="#8B6CFF" />
+                <stop offset="0%" stopColor="#7055F7" />
+                <stop offset="55%" stopColor="#477BFF" />
+                <stop offset="100%" stopColor="#35C9D8" />
               </linearGradient>
               <linearGradient id="edvanta-intro-sweep" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#526BFF" stopOpacity="0" />
+                <stop offset="0%" stopColor="#7055F7" stopOpacity="0" />
                 <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.95" />
-                <stop offset="100%" stopColor="#8B6CFF" stopOpacity="0" />
+                <stop offset="100%" stopColor="#35C9D8" stopOpacity="0" />
               </linearGradient>
             </defs>
 
@@ -277,7 +278,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
               cx="14"
               cy="49"
               r="3.4"
-              fill="#526BFF"
+              fill="#7055F7"
               style={{
                 opacity: 0,
                 transformOrigin: '14px 49px',
@@ -288,7 +289,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
               cx="50"
               cy="49"
               r="3.4"
-              fill="#8B6CFF"
+              fill="#477BFF"
               style={{
                 opacity: 0,
                 transformOrigin: '50px 49px',
@@ -299,7 +300,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
               cx="46.5"
               cy="23.5"
               r="2.8"
-              fill="#8B6CFF"
+              fill="#35C9D8"
               style={{
                 opacity: 0,
                 transformOrigin: '46.5px 23.5px',
@@ -310,7 +311,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
               cx="32"
               cy="31"
               r="4"
-              fill="#101827"
+              fill="#111322"
               stroke="url(#edvanta-intro-grad)"
               strokeWidth="2.5"
               style={{
@@ -357,7 +358,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
             className="pointer-events-none absolute inset-y-0 left-0 w-24 opacity-0"
             style={{
               background:
-                'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(139,108,255,0.45) 50%, rgba(255,255,255,0) 100%)',
+                'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(112,85,247,0.45) 50%, rgba(255,255,255,0) 100%)',
               animation: 'edvanta-wordmark-sweep 0.7s ease-in-out 2.08s forwards',
             }}
           />
@@ -365,7 +366,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
 
         {/* Tagline Fade-In */}
         <p
-          className="mt-2.5 text-sm sm:text-base font-medium tracking-[0.04em] text-slate-300 opacity-0"
+          className="mt-2.5 text-sm sm:text-base font-medium tracking-[0.04em] text-[#B4BDD9] opacity-0"
           style={{
             animation: 'edvanta-tagline-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 2.46s forwards',
           }}
@@ -378,7 +379,7 @@ export function BrandIntro({ onComplete, reducedMotion = false }: BrandIntroProp
       <button
         type="button"
         onClick={handleSkip}
-        className="fixed bottom-6 right-6 z-20 inline-flex items-center justify-center rounded-lg border border-slate-700/80 bg-slate-900/75 hover:bg-slate-800 px-4 py-2.5 min-h-[44px] text-xs font-medium text-slate-200 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526BFF] whitespace-nowrap"
+        className="fixed bottom-6 right-6 z-20 inline-flex items-center justify-center rounded-xl border border-[#2B3150] bg-[#181B2E]/85 hover:bg-[#212640] px-4 py-2.5 min-h-[44px] text-xs font-medium text-[#B4BDD9] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7055F7] whitespace-nowrap"
       >
         Skip intro
       </button>
