@@ -32,9 +32,9 @@ interface CompanionContextValue {
 const CompanionContext = createContext<CompanionContextValue | undefined>(undefined);
 
 const INITIAL_MESSAGE: CompanionChatMessage = {
-  id: 'welcome-volt',
+  id: 'welcome-byte',
   sender: 'companion',
-  text: "Hi! I'm Volt, your adaptive EDVANTA study companion. Ask me about Class 10 Electricity formulas, solve a numerical, check your streak & badges, or jump right into any learning activity!",
+  text: "Hi! I'm Byte, your adaptive EDVANTA study companion. Ask me about Java DSA patterns, Big-O complexity, or interview-style problems—or check your streak, badges, and learning progress.",
   timestamp: new Date().toISOString(),
   source: 'fallback',
   mood: 'welcome',
@@ -45,7 +45,7 @@ const INITIAL_MESSAGE: CompanionChatMessage = {
   suggestedReplies: [
     'What should I study next?',
     'Check my badges & streak',
-    'Solve I for 12V and 4 ohms',
+    'Explain binary search complexity',
   ],
 };
 
@@ -66,8 +66,8 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
   const [activeConceptName, setActiveConceptName] = useState<string | undefined>(undefined);
   const [companionTier, setCompanionTier] = useState<CompanionTierInfo>({
     tier: 1,
-    title: 'Scout Spark',
-    unlockHint: 'Reach Level 3 to evolve Volt to Neural Guide.',
+    title: 'Code Scout',
+    unlockHint: 'Reach Level 3 to evolve Byte to Neural Guide.',
   });
   const [messages, setMessages] = useState<CompanionChatMessage[]>([INITIAL_MESSAGE]);
   const [sending, setSending] = useState(false);
@@ -174,13 +174,13 @@ export function CompanionProvider({ children }: { children: React.ReactNode }) {
         setMessages((prev) => [...prev, botMsg]);
         triggerReaction(botMood === 'idle' ? 'celebrating' : botMood, undefined, 2400);
       } catch (err) {
-        const errText = err instanceof Error ? err.message : 'Unable to reach Volt right now.';
+        const errText = err instanceof Error ? err.message : 'Unable to reach Byte right now.';
         setMessages((prev) => [
           ...prev,
           {
             id: `c-err-${Date.now()}`,
             sender: 'companion',
-            text: `I hit a quick circuit snag: ${errText}. Try asking again in a moment!`,
+            text: `I hit a quick snag: ${errText}. Try asking again in a moment!`,
             timestamp: new Date().toISOString(),
             source: 'fallback',
             mood: 'encouraging',

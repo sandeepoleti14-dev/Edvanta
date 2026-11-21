@@ -81,17 +81,18 @@ export async function generateQuestionWithGeminiResult(params: {
     return { question: null, aiNotice: notice ?? undefined };
   }
 
-  const prompt = `You are a Class 10 Physics curriculum specialist creating an adaptive multiple-choice question.
+  const prompt = `You are a Java DSA curriculum specialist creating an adaptive multiple-choice question.
 Concept: ${params.conceptName}
 Concept summary: ${params.conceptDescription}
 Key formula: ${params.keyFormula}
 Target difficulty: ${params.difficulty}
 Student's recent misconceptions on this topic: ${params.recentMisconceptions.length > 0 ? params.recentMisconceptions.join('; ') : 'None recorded yet'}
-Avoid repeating or closely paraphrasing these existing questions:
-${params.existingQuestions.slice(0, 6).map((q, idx) => `${idx + 1}. ${q}`).join('\n')}
+Create a meaningfully different question from these existing questions. Do not copy their wording, tested scenario, or reasoning pattern:
+${params.existingQuestions.slice(-30).map((q, idx) => `${idx + 1}. ${q}`).join('\n')}
 
 Requirements:
-- Write 1 clear, unambiguous Class 10 Physics (Electricity) conceptual or numerical multiple-choice question.
+- Write 1 clear, unambiguous Java Data Structures & Algorithms (DSA) conceptual or numerical multiple-choice question.
+- Test a distinct concept, edge case, or application rather than paraphrasing an existing question.
 - Provide exactly 4 distinct answer options (no "All of the above" or "None of the above").
 - Provide the 0-based index (0, 1, 2, or 3) of the single correct option.
 - Provide a concise explanation, the expected student reasoning, and 2-3 specific misconception indicators that distractors test.`;
@@ -103,7 +104,7 @@ Requirements:
         contents: prompt,
         config: {
           systemInstruction:
-            'Return strictly valid JSON matching the schema. Keep numbers clean and physically accurate for Class 10 Physics.',
+            'Return strictly valid JSON matching the schema. Keep Java syntax valid and algorithmic reasoning technically accurate.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -151,7 +152,11 @@ Requirements:
       typeof parsed.explanation !== 'string' ||
       parsed.explanation.trim().length < 10 ||
       typeof parsed.expectedReasoning !== 'string' ||
-      parsed.expectedReasoning.trim().length < 10
+      parsed.expectedReasoning.trim().length < 10 ||
+      !Array.isArray(parsed.misconceptionIndicators) ||
+      parsed.misconceptionIndicators.length < 2 ||
+      parsed.misconceptionIndicators.length > 3 ||
+      parsed.misconceptionIndicators.some((indicator) => typeof indicator !== 'string' || indicator.trim().length === 0)
     ) {
       return { question: null, aiNotice: formatGeminiNotice('unknown') };
     }
@@ -173,9 +178,7 @@ Requirements:
         correctIndex: parsed.correctIndex,
         explanation: parsed.explanation.trim(),
         expectedReasoning: parsed.expectedReasoning.trim(),
-        misconceptionIndicators: Array.isArray(parsed.misconceptionIndicators)
-          ? parsed.misconceptionIndicators.filter((m) => typeof m === 'string' && m.trim().length > 0).slice(0, 4)
-          : [],
+        misconceptionIndicators: parsed.misconceptionIndicators.map((indicator) => indicator.trim()),
       },
     };
   } catch (err) {
@@ -207,7 +210,7 @@ export async function analyzeStudentReasoning(input: FallbackAnalysisInput): Pro
     return analyzeReasoningDeterministic(input);
   }
 
-  const prompt = `Analyze a Class 10 Physics student's answer and written reasoning.
+  const prompt = `Analyze a Java DSA student's answer and written reasoning.
 
 Concept: ${input.conceptName}
 Question: ${input.questionText}
@@ -229,7 +232,7 @@ Task:
         contents: prompt,
         config: {
           systemInstruction:
-            'You are a diagnostic Physics tutor. Return structured JSON strictly matching the schema. Be concise, accurate, and never invent a misconception if the student reasoning is unclear or off-topic.',
+            'You are a Java DSA tutor. Return structured JSON strictly matching the schema. Be concise, accurate, and never invent a misconception if the student reasoning is unclear or off-topic.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -354,13 +357,13 @@ export async function chatWithStudyCompanion(
 
   const recentTurns = params.history
     .slice(-6)
-    .map((h) => `${h.sender === 'user' ? 'Student' : 'Volt'}: ${h.text}`)
+    .map((h) => `${h.sender === 'user' ? 'Student' : 'Byte'}: ${h.text}`)
     .join('\n');
 
   const prompt = `Live Student Workspace Context:
 - Name: ${params.studentName}
 - Current Screen: ${params.currentPage || 'Student Workspace'}
-- Active Topic: ${params.activeConceptName || 'Class 10 Physics — Electricity'}
+- Active Topic: ${params.activeConceptName || 'Java DSA — Java DSA'}
 - Overall Mastery: ${params.overallMastery}% | Questions Attempted: ${params.totalAttempted} | Accuracy: ${params.accuracyRate}%
 - Active Streak: ${params.streakDays} days | Total XP: ${params.totalXp} | Badges Unlocked: ${params.unlockedBadgesCount}/${params.totalBadgesCount}
 - Unlocked Badges: ${params.unlockedBadgeNames.join(', ') || 'None yet'}
@@ -390,10 +393,10 @@ ${recentTurns || '(New conversation)'}
 
 Student's message: "${params.message}"
 
-Respond as Volt, an interactive Class 10 Physics & EDVANTA app assistant.
+Respond as Byte, an interactive Java DSA & EDVANTA app assistant.
 Rules:
-1. Answer whatever the user asks directly—whether it is a physics question, numerical problem, formula request, progress/streak/badge check, revision question, or navigation command.
-2. Keep the reply crisp (2–4 clear sentences) and mathematically accurate with SI units.
+1. Answer whatever the user asks directly—whether it is a Java DSA question, algorithm walkthrough, code-pattern request, progress/streak/badge check, revision question, or navigation command.
+2. Keep the reply crisp (2–4 clear sentences) and technically accurate with correct Java syntax and complexity.
 3. Choose up to 2 relevant clickable app buttons in recommendedActionRoutes using ONLY valid routes from the list above (e.g. launching a concept's module or adaptive practice, opening achievements, etc.).
 4. Provide 2–3 short, natural followUpPrompts (under 40 chars each) tailored to what the student just asked.`;
 
@@ -404,7 +407,7 @@ Rules:
         contents: prompt,
         config: {
           systemInstruction:
-            'You are Volt, an interactive AI study companion inside EDVANTA for Class 10 Physics (Electricity). Return strictly valid JSON matching the schema.',
+            'You are Byte, an interactive AI study companion inside EDVANTA for Java Data Structures & Algorithms (DSA). Return strictly valid JSON matching the schema.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -501,7 +504,7 @@ export async function enrichMockExamCoachWithGemini(params: {
     .map((c) => `- ${c.conceptName}: ${c.correctCount}/${c.totalQuestions} (${c.accuracy}%), mastery ${c.masteryBefore}% -> ${c.masteryAfter}%`)
     .join('\n');
 
-  const prompt = `You are EDVANTA Coach AI analyzing a Class 10 Physics (Electricity) timed mock exam.
+  const prompt = `You are EDVANTA Coach AI analyzing a Java Data Structures & Algorithms (DSA) timed mock exam.
 Student: ${params.studentName}
 Score: ${params.scorePercent}% (${params.correctCount}/${params.totalQuestions})
 Time used: ${Math.floor(params.durationUsedSeconds / 60)}m ${params.durationUsedSeconds % 60}s
@@ -521,7 +524,7 @@ Write concise, high-impact coaching feedback:
         model: MODEL_NAME,
         contents: prompt,
         config: {
-          systemInstruction: 'Return strictly valid JSON matching the schema. Be encouraging, specific to Physics Electricity, and concise.',
+          systemInstruction: 'Return strictly valid JSON matching the schema. Be encouraging, specific to Java DSA, and concise.',
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,

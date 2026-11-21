@@ -1,586 +1,128 @@
 import { useState } from 'react';
 import { LearningModuleItem } from '../../shared/types';
-import { ProgressBar } from './ui/ThemePrimitives';
+
+const EXAMPLES: Record<LearningModuleItem['simulatorType'], { title: string; code: string; complexity: string }> = {
+  complexity: {
+    title: 'Nested-loop complexity',
+    code: 'for (int i = 0; i < n; i++) {\n  for (int j = 1; j < n; j *= 2) {\n    work();\n  }\n}',
+    complexity: 'O(N log N)',
+  },
+  arrays: {
+    title: 'One-pass array scan',
+    code: 'int max = nums[0];\nfor (int value : nums) {\n  max = Math.max(max, value);\n}',
+    complexity: 'O(N) time · O(1) space',
+  },
+  'binary-search': {
+    title: 'Binary search',
+    code: 'while (low <= high) {\n  int mid = low + (high - low) / 2;\n  if (nums[mid] == target) return mid;\n  if (nums[mid] < target) low = mid + 1;\n  else high = mid - 1;\n}',
+    complexity: 'O(log N) time',
+  },
+  recursion: {
+    title: 'Backtracking subsets',
+    code: 'void backtrack(int start) {\n  result.add(new ArrayList<>(path));\n  for (int i = start; i < nums.length; i++) {\n    path.add(nums[i]);\n    backtrack(i + 1);\n    path.remove(path.size() - 1);\n  }\n}',
+    complexity: 'O(N · 2ᴺ) time · O(N) stack',
+  },
+  'linked-list': {
+    title: 'Reverse a linked list',
+    code: 'ListNode prev = null, curr = head;\nwhile (curr != null) {\n  ListNode next = curr.next;\n  curr.next = prev;\n  prev = curr;\n  curr = next;\n}',
+    complexity: 'O(N) time · O(1) space',
+  },
+  trees: {
+    title: 'Tree depth-first traversal',
+    code: 'int maxDepth(TreeNode node) {\n  if (node == null) return 0;\n  int left = maxDepth(node.left);\n  int right = maxDepth(node.right);\n  return 1 + Math.max(left, right);\n}',
+    complexity: 'O(N) time · O(H) stack',
+  },
+  heaps: {
+    title: 'Keep the K largest values',
+    code: 'PriorityQueue<Integer> minHeap = new PriorityQueue<>();\nfor (int value : nums) {\n  minHeap.offer(value);\n  if (minHeap.size() > k) minHeap.poll();\n}',
+    complexity: 'O(N log K) time · O(K) space',
+  },
+  'graphs-dp': {
+    title: 'Breadth-first graph traversal',
+    code: 'Queue<Integer> queue = new ArrayDeque<>();\nqueue.offer(start);\nvisited[start] = true;\nwhile (!queue.isEmpty()) {\n  int node = queue.poll();\n  for (int next : graph.get(node)) {\n    if (!visited[next]) {\n      visited[next] = true;\n      queue.offer(next);\n    }\n  }\n}',
+    complexity: 'O(V + E) time',
+  },
+};
 
 export function ModuleSimulator({ type }: { type: LearningModuleItem['simulatorType'] }) {
-  // Shared slider state variables cleanly bounded per simulator
-  const [valA, setValA] = useState<number>(() => {
-    if (type === 'current') return 60;
-    if (type === 'voltage') return 48;
-    if (type === 'ohms') return 12;
-    if (type === 'resistance') return 10;
-    if (type === 'series') return 18;
-    if (type === 'parallel') return 12;
-    if (type === 'power') return 120;
-    return 1500; // energy watts
-  });
-
-  const [valB, setValB] = useState<number>(() => {
-    if (type === 'current') return 20;
-    if (type === 'voltage') return 4;
-    if (type === 'ohms') return 6;
-    if (type === 'resistance') return 2;
-    if (type === 'series') return 3;
-    if (type === 'parallel') return 4;
-    if (type === 'power') return 60;
-    return 3; // energy hours
-  });
-
-  const [valC, setValC] = useState<number>(() => {
-    if (type === 'series') return 6;
-    if (type === 'parallel') return 12;
-    return 10;
-  });
-
-  const [materialIdx, setMaterialIdx] = useState<number>(0);
-
-  const wrapperCls =
-    'rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#EEF1FA]/60 dark:bg-[#212640]/80 p-5 space-y-4';
-  const statCardCls =
-    'rounded-xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] p-3';
-  const sliderCls = 'w-full accent-[#7055F7]';
-
-  if (type === 'current') {
-    const current = valA / valB;
-    const electrons = (valA / 1.6e-19).toExponential(2);
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Interactive Charge Flow Explorer (I = Q / t)
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            I = {current.toFixed(2)} A
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Charge Q</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} C</strong>
-            </span>
-            <input
-              type="range"
-              min={10}
-              max={300}
-              step={10}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Time t</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} s</strong>
-            </span>
-            <input
-              type="range"
-              min={5}
-              max={120}
-              step={5}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
-          <div className={statCardCls}>
-            <span className="text-[#6E7696] dark:text-[#8892B5]">Current Rate</span>
-            <p className="font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] tabular-nums mt-0.5">
-              {current.toFixed(2)} C/s
-            </p>
-          </div>
-          <div className={statCardCls}>
-            <span className="text-[#6E7696] dark:text-[#8892B5]">Electrons Transferred</span>
-            <p className="font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] tabular-nums mt-0.5">
-              {electrons}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'voltage') {
-    const voltage = valA / valB;
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Potential Difference Calculator (V = W / Q)
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            V = {voltage.toFixed(2)} V
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Work Done W</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} J</strong>
-            </span>
-            <input
-              type="range"
-              min={6}
-              max={180}
-              step={6}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Charge Moved Q</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} C</strong>
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={20}
-              step={1}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-        <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-          Every coulomb of charge gains{' '}
-          <strong className="text-[#14172B] dark:text-[#F4F6FF]">{voltage.toFixed(2)} J</strong> of energy across
-          these terminals.
-        </p>
-      </div>
-    );
-  }
-
-  if (type === 'ohms') {
-    const current = valA / valB;
-    const barPct = Math.min(100, Math.round((current / 12) * 100));
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Interactive Ohm&apos;s Law Lab (I = V / R)
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            I = {current.toFixed(2)} A
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Supply Voltage V</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} V</strong>
-            </span>
-            <input
-              type="range"
-              min={3}
-              max={24}
-              step={3}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Resistance R</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} Ω</strong>
-            </span>
-            <input
-              type="range"
-              min={2}
-              max={24}
-              step={2}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-
-        <div>
-          <div className="flex justify-between text-xs text-[#4E5674] dark:text-[#B4BDD9] mb-1.5">
-            <span>Resulting Current Flow</span>
-            <span className="font-mono tabular-nums">{current.toFixed(2)} A (inverse to R)</span>
-          </div>
-          <ProgressBar value={barPct} max={100} tone="primary" label="Resulting current flow" />
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'resistance') {
-    const materials = [
-      { name: 'Copper', rho: 1.68e-8, label: '1.68 × 10⁻⁸ Ω·m' },
-      { name: 'Tungsten', rho: 5.6e-8, label: '5.60 × 10⁻⁸ Ω·m' },
-      { name: 'Nichrome', rho: 1.1e-6, label: '1.10 × 10⁻⁶ Ω·m' },
-    ];
-    const mat = materials[materialIdx];
-    const areaM2 = valB * 1e-6;
-    const resistance = (mat.rho * valA) / areaM2;
-
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Wire Geometry &amp; Resistivity Simulator (R = ρL / A)
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            R = {resistance.toFixed(3)} Ω
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {materials.map((m, idx) => (
-            <button
-              key={m.name}
-              type="button"
-              onClick={() => setMaterialIdx(idx)}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${
-                materialIdx === idx
-                  ? 'border-[#7055F7] bg-[#7055F7] text-white'
-                  : 'border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] text-[#4E5674] dark:text-[#B4BDD9] hover:bg-[#EEF1FA] dark:hover:bg-[#272D4B]'
-              }`}
-            >
-              {m.name} ({m.label})
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Wire Length L</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} m</strong>
-            </span>
-            <input
-              type="range"
-              min={2}
-              max={50}
-              step={2}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Cross-Section Area A</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} mm²</strong>
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'series') {
-    const req = valB + valC;
-    const current = valA / req;
-    const v1 = current * valB;
-    const v2 = current * valC;
-
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Series Loop Divider Explorer
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            R_eq = {req} Ω · I = {current.toFixed(2)} A
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Battery V</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} V</strong>
-            </span>
-            <input
-              type="range"
-              min={6}
-              max={36}
-              step={3}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Resistor R₁</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} Ω</strong>
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={15}
-              step={1}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Resistor R₂</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valC} Ω</strong>
-            </span>
-            <input
-              type="range"
-              min={1}
-              max={15}
-              step={1}
-              value={valC}
-              onChange={(e) => setValC(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className={statCardCls}>
-            <span className="text-[#6E7696] dark:text-[#8892B5]">Voltage across R₁ (I × R₁)</span>
-            <p className="font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] tabular-nums mt-0.5">
-              {v1.toFixed(2)} V
-            </p>
-          </div>
-          <div className={statCardCls}>
-            <span className="text-[#6E7696] dark:text-[#8892B5]">Voltage across R₂ (I × R₂)</span>
-            <p className="font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] tabular-nums mt-0.5">
-              {v2.toFixed(2)} V
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'parallel') {
-    const req = (valB * valC) / (valB + valC);
-    const i1 = valA / valB;
-    const i2 = valA / valC;
-    const iTotal = i1 + i2;
-
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Parallel Branch Splitter Explorer
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            R_eq = {req.toFixed(2)} Ω · I_total = {iTotal.toFixed(2)} A
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Supply V</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} V</strong>
-            </span>
-            <input
-              type="range"
-              min={6}
-              max={24}
-              step={2}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Branch R₁</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} Ω</strong>
-            </span>
-            <input
-              type="range"
-              min={2}
-              max={20}
-              step={2}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Branch R₂</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valC} Ω</strong>
-            </span>
-            <input
-              type="range"
-              min={2}
-              max={20}
-              step={2}
-              value={valC}
-              onChange={(e) => setValC(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div className={statCardCls}>
-            <span className="text-[#6E7696] dark:text-[#8892B5]">Branch 1 Current (V / R₁)</span>
-            <p className="font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] tabular-nums mt-0.5">
-              {i1.toFixed(2)} A
-            </p>
-          </div>
-          <div className={statCardCls}>
-            <span className="text-[#6E7696] dark:text-[#8892B5]">Branch 2 Current (V / R₂)</span>
-            <p className="font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF] tabular-nums mt-0.5">
-              {i2.toFixed(2)} A
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'power') {
-    const power = (valA * valA) / valB;
-    const current = valA / valB;
-
-    return (
-      <div className={wrapperCls}>
-        <div className="flex items-center justify-between gap-2">
-          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-            Appliance Power Scaling Explorer (P = V² / R)
-          </h4>
-          <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-            P = {power.toFixed(1)} W
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Applied Voltage V</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} V</strong>
-            </span>
-            <input
-              type="range"
-              min={50}
-              max={240}
-              step={10}
-              value={valA}
-              onChange={(e) => setValA(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-          <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-            <span className="flex justify-between">
-              <span>Fixed Element Resistance R</span>
-              <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} Ω</strong>
-            </span>
-            <input
-              type="range"
-              min={20}
-              max={120}
-              step={10}
-              value={valB}
-              onChange={(e) => setValB(Number(e.target.value))}
-              className={sliderCls}
-            />
-          </label>
-        </div>
-
-        <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-          Current drawn is{' '}
-          <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF]">{current.toFixed(2)} A</strong>. Notice
-          that doubling applied voltage quadruples output power.
-        </p>
-      </div>
-    );
-  }
-
-  // energy simulator
-  const kwhPerDay = (valA / 1000) * valB;
-  const totalKwh = kwhPerDay * valC;
-  const joules = totalKwh * 3.6e6;
+  const [inputSize, setInputSize] = useState(16);
+  const example = EXAMPLES[type];
+  const logarithm = Math.ceil(Math.log2(inputSize));
+  const estimatedOperations = {
+    complexity: inputSize * logarithm,
+    arrays: inputSize,
+    'binary-search': logarithm,
+    recursion: 2 ** Math.min(inputSize, 12),
+    'linked-list': inputSize,
+    trees: inputSize,
+    heaps: logarithm,
+    'graphs-dp': inputSize * 2,
+  }[type];
+  const visualCount = Math.min(inputSize, 16);
 
   return (
-    <div className={wrapperCls}>
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-          Commercial Energy &amp; kWh Meter
-        </h4>
-        <span className="font-mono text-sm font-bold text-[#7055F7] dark:text-[#A493FF] tabular-nums">
-          {totalKwh.toFixed(2)} kWh
+    <section className="rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#EEF1FA]/60 dark:bg-[#212640]/80 p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
+            Java Algorithm Playground · {example.title}
+          </h4>
+          <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-1">{example.complexity}</p>
+        </div>
+        <span className="rounded-lg bg-white dark:bg-[#181B2E] px-3 py-1.5 font-mono text-xs font-semibold text-[#7055F7] dark:text-[#A493FF]">
+          N = {inputSize}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-          <span className="flex justify-between">
-            <span>Power Rating</span>
-            <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valA} W</strong>
+      <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
+        <span className="flex justify-between">
+          <span>Input size</span>
+          <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF]">{inputSize} items</strong>
+        </span>
+        <input
+          aria-label="Algorithm input size"
+          type="range"
+          min={4}
+          max={64}
+          step={4}
+          value={inputSize}
+          onChange={(event) => setInputSize(Number(event.target.value))}
+          className="w-full accent-[#7055F7]"
+        />
+      </label>
+
+      <pre className="overflow-x-auto rounded-xl bg-[#14172B] p-4 text-xs leading-5 text-[#DCE5FF]">
+        <code>{example.code}</code>
+      </pre>
+
+      <div className="flex flex-wrap items-end gap-1.5" aria-label={`Input visualization with ${visualCount} items`}>
+        {Array.from({ length: visualCount }, (_, index) => (
+          <span
+            key={index}
+            className="flex h-8 min-w-8 items-center justify-center rounded-md border border-[#CBD3E8] dark:border-[#3C456D] bg-white dark:bg-[#181B2E] px-2 font-mono text-[10px] text-[#4E5674] dark:text-[#B4BDD9]"
+          >
+            {index + 1}
           </span>
-          <input
-            type="range"
-            min={500}
-            max={3000}
-            step={250}
-            value={valA}
-            onChange={(e) => setValA(Number(e.target.value))}
-            className={sliderCls}
-          />
-        </label>
-        <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-          <span className="flex justify-between">
-            <span>Hours / Day</span>
-            <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valB} h</strong>
-          </span>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            step={1}
-            value={valB}
-            onChange={(e) => setValB(Number(e.target.value))}
-            className={sliderCls}
-          />
-        </label>
-        <label className="block space-y-1.5 text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-          <span className="flex justify-between">
-            <span>Days</span>
-            <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF] tabular-nums">{valC} d</strong>
-          </span>
-          <input
-            type="range"
-            min={1}
-            max={30}
-            step={1}
-            value={valC}
-            onChange={(e) => setValC(Number(e.target.value))}
-            className={sliderCls}
-          />
-        </label>
+        ))}
+        {inputSize > visualCount && (
+          <span className="px-1 text-xs text-[#6E7696] dark:text-[#8892B5]">+{inputSize - visualCount} more</span>
+        )}
       </div>
 
-      <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9]">
-        Equivalent energy in SI Joules:{' '}
-        <strong className="font-mono text-[#14172B] dark:text-[#F4F6FF]">{joules.toExponential(2)} J</strong>
-      </p>
-    </div>
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="rounded-xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] p-3">
+          <span className="text-[#6E7696] dark:text-[#8892B5]">Estimated work</span>
+          <p className="mt-0.5 font-mono text-base font-semibold tabular-nums text-[#14172B] dark:text-[#F4F6FF]">
+            {estimatedOperations.toLocaleString()} ops
+          </p>
+        </div>
+        <div className="rounded-xl bg-white dark:bg-[#181B2E] border border-[#E2E6F3] dark:border-[#2B3150] p-3">
+          <span className="text-[#6E7696] dark:text-[#8892B5]">Input growth</span>
+          <p className="mt-0.5 font-mono text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
+            {type === 'binary-search' || type === 'heaps' ? 'logarithmic' : type === 'recursion' ? 'exponential' : 'linear'}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }

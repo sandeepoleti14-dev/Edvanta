@@ -8,8 +8,11 @@ import {
   BookmarkCheck,
   BookOpenCheck,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Compass,
+  FileDown,
   FlipHorizontal2,
   Sparkles,
 } from 'lucide-react';
@@ -25,10 +28,71 @@ import {
   AchievementBadge,
   AchievementsPayload,
   LearningModuleItem,
+  StudyPage,
   StudentJourneyPayload,
 } from '../../../shared/types';
 
 type ModuleViewTab = 'reader' | 'journey' | 'offline';
+
+function StudyPageContent({
+  page,
+  moduleTitle,
+  pageNumber,
+  pageCount,
+  printPage = false,
+}: {
+  page: StudyPage;
+  moduleTitle: string;
+  pageNumber: number;
+  pageCount: number;
+  printPage?: boolean;
+}) {
+  return (
+    <section
+      className={`study-page-sheet ${
+        printPage ? (pageNumber === pageCount ? 'study-print-page study-print-page-last' : 'study-print-page') : ''
+      } rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] p-5 sm:p-7 space-y-5`}
+    >
+      <header className="space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#7055F7] dark:text-[#A493FF]">
+          {moduleTitle} · Page {pageNumber} of {pageCount}
+        </p>
+        <h4 className="font-display text-xl font-bold text-[#14172B] dark:text-[#F4F6FF]">{page.title}</h4>
+        <p className="text-sm text-[#6E7696] dark:text-[#8892B5]">{page.subtitle}</p>
+      </header>
+
+      <div className="space-y-5">
+        {page.sections.map((section) => (
+          <section key={section.heading} className="study-page-section space-y-2">
+            <h5 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
+              {section.heading}
+            </h5>
+            {section.paragraphs.map((paragraph, index) => (
+              <p key={index} className="text-sm text-[#4E5674] dark:text-[#B4BDD9] leading-relaxed">
+                {paragraph}
+              </p>
+            ))}
+            {section.bullets && (
+              <ul className="space-y-1.5 list-disc pl-5 text-sm text-[#4E5674] dark:text-[#B4BDD9]">
+                {section.bullets.map((bullet, index) => <li key={index}>{bullet}</li>)}
+              </ul>
+            )}
+            {section.code && (
+              <pre className="study-page-code overflow-x-auto rounded-xl border border-[#2B3150] bg-[#14172B] p-4 text-xs leading-relaxed text-[#E8ECFF]">
+                <code>{section.code}</code>
+              </pre>
+            )}
+          </section>
+        ))}
+      </div>
+
+      <p className="study-page-takeaway rounded-xl border border-[#35C9D8]/30 bg-[#35C9D8]/8 px-4 py-3 text-sm text-[#14172B] dark:text-[#F4F6FF]">
+        <strong className="text-[#15996C] dark:text-[#27C991]">Key takeaway: </strong>
+        {page.takeaway}
+      </p>
+    </section>
+  );
+}
 
 export function LearningModulesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -46,6 +110,7 @@ export function LearningModulesPage() {
   const [journey, setJourney] = useState<StudentJourneyPayload | null>(null);
   const [savedNoteIds, setSavedNoteIds] = useState<number[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [studyPageIdx, setStudyPageIdx] = useState(0);
   const [quickChoice, setQuickChoice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState(false);
@@ -125,6 +190,7 @@ export function LearningModulesPage() {
     if (activeModule) {
       setActiveConceptName(activeModule.title);
       setQuickChoice(null);
+      setStudyPageIdx(0);
     }
   }, [activeModule, setActiveConceptName]);
 
@@ -250,6 +316,9 @@ export function LearningModulesPage() {
 
   const isCurrentNoteSaved = savedNoteIds.includes(activeModule.conceptId);
   const offlineSavedModules = modules.filter((m) => savedNoteIds.includes(m.conceptId));
+  const studyPages = activeModule.studyPages ?? [];
+  const safeStudyPageIdx = Math.min(studyPageIdx, Math.max(studyPages.length - 1, 0));
+  const currentStudyPage = studyPages[safeStudyPageIdx];
 
   return (
     <AppShell title="Learning Modules">
@@ -259,7 +328,7 @@ export function LearningModulesPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-lg font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                Class 10 Physics — Electricity Study Hub
+                Java DSA Study Hub
               </h2>
               <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-1">
                 Switch between interactive lessons, your step-by-step Journey View, and offline revision sheets.
@@ -613,36 +682,113 @@ export function LearningModulesPage() {
                   </div>
                 </div>
 
-                {/* Core Concept Explanation */}
-                <div className="pt-2">
-                  <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                    Core Concept
-                  </h4>
-                  <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] leading-relaxed mt-1.5">
-                    {activeModule.coreExplanation}
-                  </p>
+                <section className="study-reader-screen space-y-3" aria-label="Paginated study guide">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h4 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
+                        Study Guide
+                      </h4>
+                      <p className="text-xs text-[#6E7696] dark:text-[#8892B5]">
+                        Read each page, then use the topic practice and timed exam to check your understanding.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#212640] hover:bg-[#EEF1FA] dark:hover:bg-[#272D4B] px-3.5 py-2 text-xs font-semibold text-[#14172B] dark:text-[#F4F6FF] transition-colors"
+                    >
+                      <FileDown className="h-4 w-4 text-[#7055F7]" aria-hidden="true" />
+                      Print / Save as PDF
+                    </button>
+                  </div>
+
+                  {currentStudyPage ? (
+                    <>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EEF1FA] dark:bg-[#252B46]">
+                        <div
+                          className="h-full rounded-full bg-[#7055F7] transition-[width]"
+                          style={{ width: `${((safeStudyPageIdx + 1) / studyPages.length) * 100}%` }}
+                        />
+                      </div>
+                      <StudyPageContent
+                        page={currentStudyPage}
+                        moduleTitle={activeModule.title}
+                        pageNumber={safeStudyPageIdx + 1}
+                        pageCount={studyPages.length}
+                      />
+                      <div className="flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          disabled={safeStudyPageIdx === 0}
+                          onClick={() => setStudyPageIdx((page) => Math.max(0, page - 1))}
+                          className="inline-flex items-center gap-1 rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] px-3.5 py-2 text-xs font-medium text-[#14172B] dark:text-[#F4F6FF] disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                          Previous page
+                        </button>
+                        <span className="text-xs font-mono tabular-nums text-[#6E7696] dark:text-[#8892B5]">
+                          Page {safeStudyPageIdx + 1} / {studyPages.length}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={safeStudyPageIdx >= studyPages.length - 1}
+                          onClick={() => setStudyPageIdx((page) => Math.min(studyPages.length - 1, page + 1))}
+                          className="inline-flex items-center gap-1 rounded-xl bg-[#7055F7] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#5D42E6] disabled:opacity-40"
+                        >
+                          Next page
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] p-4 text-sm text-[#4E5674] dark:text-[#B4BDD9]">
+                      The study pages are not available in this saved copy. Reconnect to load the full chapter.
+                    </p>
+                  )}
+                </section>
+
+                <div className="study-print-document" aria-hidden="true">
+                  {studyPages.map((page, index) => (
+                    <StudyPageContent
+                      key={`${activeModule.conceptId}-${index}`}
+                      page={page}
+                      moduleTitle={activeModule.title}
+                      pageNumber={index + 1}
+                      pageCount={studyPages.length}
+                      printPage
+                    />
+                  ))}
                 </div>
 
-                {/* Interactive Physics Simulator */}
-                <ModuleSimulator type={activeModule.simulatorType} />
-
-                {/* Worked Numerical Example */}
-                <div className="rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-[#F6F7FC]/70 dark:bg-[#111322]/70 p-5 space-y-3">
-                  <h4 className="font-display text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                    Worked Numerical Example
-                  </h4>
-                  <p className="text-sm font-medium text-[#14172B] dark:text-[#F4F6FF]">
-                    {activeModule.workedExample.problem}
-                  </p>
-                  <ol className="space-y-1.5 text-sm text-[#4E5674] dark:text-[#B4BDD9] list-decimal pl-5">
-                    {activeModule.workedExample.steps.map((step, i) => (
-                      <li key={i}>{step}</li>
-                    ))}
-                  </ol>
-                  <p className="text-xs font-mono font-semibold text-[#15996C] dark:text-[#27C991]">
-                    Final Answer: {activeModule.workedExample.answer}
-                  </p>
+                <div className="rounded-xl border border-[#7055F7]/20 bg-[#7055F7]/5 p-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#14172B] dark:text-[#F4F6FF]">Ready for a topic test?</p>
+                    <p className="text-xs text-[#4E5674] dark:text-[#B4BDD9]">
+                      Try a question on {activeModule.title.replace(/^\d+\.\s*/, '')}, then take the full-syllabus mock exam.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      to={`/student/practice?conceptId=${activeModule.conceptId}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#7055F7] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#5D42E6]"
+                    >
+                      Start topic test <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Link>
+                    <Link
+                      to="/student/mock-exam"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E6F3] dark:border-[#2B3150] px-3.5 py-2 text-xs font-semibold text-[#14172B] dark:text-[#F4F6FF]"
+                    >
+                      Timed mock exam
+                    </Link>
+                  </div>
                 </div>
+
+                <section className="study-reader-screen space-y-3" aria-label="Interactive algorithm practice">
+                  <h4 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
+                    Hands-on Java Pattern Lab
+                  </h4>
+                  <ModuleSimulator type={activeModule.simulatorType} />
+                </section>
 
                 {/* Common Misconception Watch */}
                 <div className="rounded-2xl border border-[#F6B94A]/40 bg-[#F6B94A]/10 p-4 flex items-start gap-3">

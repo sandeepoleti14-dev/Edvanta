@@ -83,6 +83,95 @@
   font-variant-numeric: tabular-nums;
 }
 
+.study-print-document {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0.65in;
+  }
+
+  html,
+  body {
+    min-height: auto !important;
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .study-print-document,
+  .study-print-document * {
+    visibility: visible !important;
+  }
+
+  .study-print-document {
+    display: block !important;
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    background: #fff !important;
+    color: #14172b !important;
+  }
+
+  .study-print-page {
+    display: block !important;
+    min-height: 9.5in;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #14172b !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .study-print-page-last {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .study-print-page h4,
+  .study-print-page h5,
+  .study-print-page p,
+  .study-print-page li,
+  .study-print-page strong {
+    color: #14172b !important;
+  }
+
+  .study-print-page header > p:first-child {
+    color: #5d42e6 !important;
+  }
+
+  .study-page-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .study-page-code {
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+    border-color: #cbd3e8 !important;
+    background: #f3f4f6 !important;
+    color: #14172b !important;
+  }
+
+  .study-page-code code {
+    color: #14172b !important;
+  }
+
+  .study-page-takeaway {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-color: #cbd3e8 !important;
+    background: #f0fdfa !important;
+  }
+}
+
 @keyframes volt-float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-4px) rotate(1.5deg); }
@@ -113,7 +202,7 @@
   70% { transform: translateY(-2px) rotate(3deg); }
 }
 
-@keyframes volt-sparkle {
+@keyframes byte-sparkle {
   0% { opacity: 0; transform: scale(0.6) translateY(4px); }
   30% { opacity: 1; transform: scale(1.08) translateY(-2px); }
   100% { opacity: 0; transform: scale(0.85) translateY(-10px); }
@@ -125,31 +214,31 @@
   100% { opacity: 1; transform: translateY(0px) scale(1); }
 }
 
-.volt-anim-idle {
+.byte-anim-idle {
   animation: volt-float 3.2s ease-in-out infinite;
 }
 
-.volt-anim-welcome {
+.byte-anim-welcome {
   animation: volt-wave 1.8s ease-in-out 2;
 }
 
-.volt-anim-thinking {
+.byte-anim-thinking {
   animation: volt-think 1.1s ease-in-out infinite;
 }
 
-.volt-anim-celebrating,
-.volt-anim-achievement,
-.volt-anim-streak,
-.volt-anim-mastered {
+.byte-anim-celebrating,
+.byte-anim-achievement,
+.byte-anim-streak,
+.byte-anim-mastered {
   animation: volt-celebrate 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2;
 }
 
-.volt-anim-encouraging {
+.byte-anim-encouraging {
   animation: volt-encourage 1.4s ease-in-out 2;
 }
 
-.volt-sparkle-pop {
-  animation: volt-sparkle 1.4s ease-out forwards;
+.byte-sparkle-pop {
+  animation: byte-sparkle 1.4s ease-out forwards;
 }
 
 .edvanta-xp-pop {

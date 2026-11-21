@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Java DSA learning paths</title>
+  <desc id="desc">Colorful connected nodes represent arrays, trees, graphs, and dynamic programming.</desc>
+  <defs>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7055f7"/>
+      <stop offset="1" stop-color="#35c9d8"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#14172b" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="420" rx="28" fill="#171b31"/>
+  <path d="M182 212 350 125 518 212 686 125 854 212 1022 125M350 125v174l168-87m0 0 168 87 168-87v174" fill="none" stroke="url(#line)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+  <g filter="url(#shadow)" font-family="monospace" font-size="22" font-weight="700" text-anchor="middle">
+    <g><circle cx="182" cy="212" r="62" fill="#7055f7"/><text x="182" y="220" fill="white">ARRAYS</text></g>
+    <g><circle cx="350" cy="125" r="62" fill="#3c74e8"/><text x="350" y="133" fill="white">O(log N)</text></g>
+    <g><circle cx="518" cy="212" r="62" fill="#1caa91"/><text x="518" y="220" fill="white">TREES</text></g>
+    <g><circle cx="686" cy="125" r="62" fill="#8a60dd"/><text x="686" y="133" fill="white">GRAPHS</text></g>
+    <g><circle cx="854" cy="212" r="62" fill="#d18138"/><text x="854" y="220" fill="white">HEAPS</text></g>
+    <g><circle cx="1022" cy="125" r="62" fill="#168caa"/><text x="1022" y="133" fill="white">DP</text></g>
+    <g><circle cx="350" cy="299" r="42" fill="#26304c"/><text x="350" y="307" fill="#b7c5ff">JAVA</text></g>
+    <g><circle cx="686" cy="299" r="42" fill="#26304c"/><text x="686" y="307" fill="#b7c5ff">BFS</text></g>
+    <g><circle cx="1022" cy="299" r="42" fill="#26304c"/><text x="1022" y="307" fill="#b7c5ff">DFS</text></g>
+  </g>
+</svg>

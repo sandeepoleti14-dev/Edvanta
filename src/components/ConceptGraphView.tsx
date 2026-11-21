@@ -10,14 +10,14 @@ interface ConceptGraphViewProps {
 }
 
 const LAYOUT_POSITIONS: Record<string, { x: number; y: number }> = {
-  'electric-current': { x: 105, y: 150 },
-  'potential-difference': { x: 105, y: 390 },
-  'ohms-law': { x: 315, y: 270 },
-  resistance: { x: 525, y: 150 },
-  'series-circuits': { x: 715, y: 170 },
-  'parallel-circuits': { x: 715, y: 380 },
-  'electric-power': { x: 945, y: 170 },
-  'electrical-energy': { x: 945, y: 380 },
+  'complexity-analysis': { x: 105, y: 150 },
+  'arrays-hashing': { x: 105, y: 390 },
+  'binary-search-sorting': { x: 315, y: 270 },
+  'recursion-backtracking': { x: 525, y: 150 },
+  'linked-lists-stacks': { x: 525, y: 390 },
+  'trees-bst': { x: 715, y: 270 },
+  'heaps-priority-queues': { x: 945, y: 150 },
+  'graphs-dp': { x: 945, y: 390 },
 };
 
 const VIEW_W = 1080;
@@ -105,7 +105,7 @@ export function ConceptGraphView({ concepts, onPracticeConcept }: ConceptGraphVi
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 mb-4 border-b border-[#E2E6F3] dark:border-[#2B3150]">
           <div>
             <h2 className="font-display text-base font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-              Class 10 Physics — Electricity Dependency Map
+              Java DSA Learning Path
             </h2>
             <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5">
               Select any concept node to inspect prerequisite readiness and mastery history.

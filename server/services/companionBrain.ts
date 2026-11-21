@@ -87,14 +87,14 @@ function matchConceptFromMessage(
   concepts: CompanionStudentSnapshot['conceptMasteries']
 ): CompanionStudentSnapshot['conceptMasteries'][number] | undefined {
   const keywordMap: Array<{ slug: string; terms: string[] }> = [
-    { slug: 'electric-current', terms: ['electric current', 'current', 'charge', 'coulomb', 'ampere', 'q=it', 'i=q/t'] },
-    { slug: 'potential-difference', terms: ['potential difference', 'potential', 'voltage', 'volt', 'voltmeter', 'w=vq'] },
-    { slug: 'ohms-law', terms: ['ohm', 'v=ir', 'v = ir', 'v-i'] },
-    { slug: 'resistance', terms: ['resistance', 'resistivity', 'rho', 'length', 'cross-section', 'stretch'] },
-    { slug: 'series-circuits', terms: ['series'] },
-    { slug: 'parallel-circuits', terms: ['parallel'] },
-    { slug: 'electric-power', terms: ['power', 'watt', 'rating', 'bulb'] },
-    { slug: 'electrical-energy', terms: ['energy', 'joule', 'kwh', 'kilowatt', 'heat', 'heating'] },
+    { slug: 'complexity-analysis', terms: ['complexity', 'big-o', 'big o', 'time complexity', 'space complexity'] },
+    { slug: 'arrays-hashing', terms: ['array', 'hashmap', 'hashing', 'two sum', 'prefix sum', 'kadane'] },
+    { slug: 'binary-search-sorting', terms: ['binary search', 'sorting', 'merge sort', 'quick sort'] },
+    { slug: 'recursion-backtracking', terms: ['recursion', 'backtrack', 'subsets', 'permutation'] },
+    { slug: 'linked-lists-stacks', terms: ['linked list', 'stack', 'queue', 'deque', 'two pointer'] },
+    { slug: 'trees-bst', terms: ['tree', 'bst', 'binary search tree', 'traversal'] },
+    { slug: 'heaps-priority-queues', terms: ['heap', 'priority queue', 'top-k'] },
+    { slug: 'graphs-dp', terms: ['graph', 'bfs', 'dfs', 'dynamic programming', 'memoization', 'dp'] },
   ];
 
   for (const entry of keywordMap) {
@@ -107,114 +107,41 @@ function matchConceptFromMessage(
 }
 
 /**
- * Solves simple Class 10 Physics numerical questions inline when the user supplies values + units.
+ * Gives concise answers to common Java DSA complexity questions.
  */
-export function solveInlinePhysicsNumerical(message: string): {
+export function answerInlineDsaQuestion(message: string): {
   answerText: string;
   conceptSlug: string;
 } | null {
   const q = message.toLowerCase();
+  const sizeMatch = q.match(/\b(?:n|size|array of|input of)\s*(?:=|is|of)?\s*(\d+)\b/) ?? q.match(/\b(\d+)\s+(?:element|elements|item|items)\b/);
+  const size = sizeMatch ? Number(sizeMatch[1]) : null;
 
-  const vMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:v|volt|volts)\b/);
-  const iMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:a|amp|amps|ampere|amperes)\b/);
-  const rMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:ω|ohm|ohms)\b/);
-  const qMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:c|coulomb|coulombs)\b/);
-  const tSecMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:s|sec|secs|second|seconds)\b/);
-  const tMinMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:min|mins|minute|minutes)\b/);
-  const pMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:w|watt|watts)\b/);
-  const hMatch = q.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b/);
-
-  // 1. Ohm's Law: any two of V, I, R (unless specifically asking for power)
-  const asksPower = q.includes('power') || q.includes('watt');
-  if (!asksPower && vMatch && rMatch && !iMatch) {
-    const V = Number(vMatch[1]);
-    const R = Number(rMatch[1]);
-    if (R > 0) {
-      const I = V / R;
-      return {
-        answerText: `Using Ohm's Law (I = V / R): I = ${V} V / ${R} Ω = ${Number(I.toFixed(3))} A.`,
-        conceptSlug: 'ohms-law',
-      };
-    }
-  }
-  if (!asksPower && iMatch && rMatch && !vMatch) {
-    const I = Number(iMatch[1]);
-    const R = Number(rMatch[1]);
-    const V = I * R;
+  if (q.includes('binary search')) {
+    const steps = size && size > 1 ? Math.ceil(Math.log2(size + 1)) : null;
     return {
-      answerText: `Using Ohm's Law (V = I × R): V = ${I} A × ${R} Ω = ${Number(V.toFixed(3))} V.`,
-      conceptSlug: 'ohms-law',
+      answerText: steps
+        ? `Binary search runs in O(log N) time. For ${size} sorted elements, it needs at most about ${steps} comparisons because each step halves the remaining search range.`
+        : 'Binary search runs in O(log N) time: each comparison discards half of a sorted search range.',
+      conceptSlug: 'binary-search-sorting',
     };
   }
-  if (!asksPower && vMatch && iMatch && !rMatch) {
-    const V = Number(vMatch[1]);
-    const I = Number(iMatch[1]);
-    if (I > 0) {
-      const R = V / I;
-      return {
-        answerText: `Using Ohm's Law (R = V / I): R = ${V} V / ${I} A = ${Number(R.toFixed(3))} Ω.`,
-        conceptSlug: 'ohms-law',
-      };
-    }
-  }
-
-  // 2. Electric Power: V and I, or V and R, or P and V
-  if (asksPower && vMatch && iMatch) {
-    const V = Number(vMatch[1]);
-    const I = Number(iMatch[1]);
-    const P = V * I;
+  if (q.includes('two sum') || q.includes('hashmap') || q.includes('hash map')) {
     return {
-      answerText: `Using Electric Power (P = V × I): P = ${V} V × ${I} A = ${Number(P.toFixed(2))} W.`,
-      conceptSlug: 'electric-power',
+      answerText: 'A one-pass Two Sum solution stores seen values in a HashMap. It takes O(N) average time and O(N) extra space.',
+      conceptSlug: 'arrays-hashing',
     };
   }
-  if (asksPower && vMatch && rMatch) {
-    const V = Number(vMatch[1]);
-    const R = Number(rMatch[1]);
-    if (R > 0) {
-      const P = (V * V) / R;
-      return {
-        answerText: `Using Electric Power (P = V² / R): P = ${V}² / ${R} = ${Number(P.toFixed(2))} W.`,
-        conceptSlug: 'electric-power',
-      };
-    }
-  }
-  if (pMatch && vMatch && !hMatch) {
-    const P = Number(pMatch[1]);
-    const V = Number(vMatch[1]);
-    if (V > 0) {
-      const I = P / V;
-      const R = (V * V) / P;
-      return {
-        answerText: `From P = V × I: current I = ${P} W / ${V} V = ${Number(I.toFixed(3))} A, and element resistance R = V² / P = ${Number(R.toFixed(2))} Ω.`,
-        conceptSlug: 'electric-power',
-      };
-    }
-  }
-
-  // 3. Electric Current: Q and t
-  if (qMatch && (tSecMatch || tMinMatch)) {
-    const Q = Number(qMatch[1]);
-    const t = tSecMatch ? Number(tSecMatch[1]) : Number(tMinMatch![1]) * 60;
-    if (t > 0) {
-      const I = Q / t;
-      return {
-        answerText: `Using I = Q / t (converting time to ${t} s): I = ${Q} C / ${t} s = ${Number(I.toFixed(3))} A.`,
-        conceptSlug: 'electric-current',
-      };
-    }
-  }
-
-  // 4. Electrical Energy in kWh: P (W) and hours
-  if (pMatch && hMatch) {
-    const W = Number(pMatch[1]);
-    const h = Number(hMatch[1]);
-    const kwh = (W / 1000) * h;
+  if (q.includes('merge sort') || q.includes('mergesort')) {
     return {
-      answerText: `Converting ${W} W to ${W / 1000} kW: Energy E = ${W / 1000} kW × ${h} h = ${Number(
-        kwh.toFixed(3)
-      )} kWh (${(kwh * 3.6e6).toExponential(2)} J).`,
-      conceptSlug: 'electrical-energy',
+      answerText: 'Merge Sort takes O(N log N) time in best, average, and worst cases, with O(N) auxiliary space for merging.',
+      conceptSlug: 'binary-search-sorting',
+    };
+  }
+  if (q.includes('nested loop') && (q.includes('double') || q.includes('*= 2') || q.includes('log'))) {
+    return {
+      answerText: 'If the outer loop runs N times and the inner index doubles each iteration, total work is N · log₂N, so the time complexity is O(N log N).',
+      conceptSlug: 'complexity-analysis',
     };
   }
 
@@ -228,7 +155,7 @@ export function buildInteractiveFallbackResponse(
   const matchedConcept = matchConceptFromMessage(q, params.conceptMasteries);
 
   // 1. Live numerical solver check
-  const solved = solveInlinePhysicsNumerical(params.message);
+  const solved = answerInlineDsaQuestion(params.message);
   if (solved) {
     const concept = params.conceptMasteries.find((c) => c.slug === solved.conceptSlug);
     const actions: CompanionAction[] = concept
@@ -312,8 +239,8 @@ export function buildInteractiveFallbackResponse(
     const nextMod = params.incompleteModules[0];
     return {
       reply: nextMod
-        ? `You have completed ${params.completedModulesCount} of 8 Electricity syllabus modules. Your next module in sequence is "${nextMod.title}".`
-        : 'Amazing work—you have completed all 8 Class 10 Electricity learning modules!',
+        ? `You have completed ${params.completedModulesCount} of 8 Java DSA modules. Your next module in sequence is "${nextMod.title}".`
+        : 'Amazing work—you have completed all 8 Java DSA learning modules!',
       source: 'fallback',
       mood: 'celebrating',
       actions: [
@@ -324,7 +251,7 @@ export function buildInteractiveFallbackResponse(
         },
         { label: 'View Concept Map', type: 'navigate', targetPath: '/student/concept-map' },
       ],
-      suggestedReplies: ['What are my weak concepts?', 'Show my achievements', 'Quiz me on Circuits'],
+      suggestedReplies: ['What are my weak topics?', 'Show my achievements', 'Quiz me on arrays'],
     };
   }
 
@@ -371,20 +298,20 @@ export function buildInteractiveFallbackResponse(
       };
     }
     return {
-      reply: 'You currently have zero unresolved misconceptions—your written reasoning is well aligned with Class 10 Physics laws!',
+      reply: 'You currently have zero unresolved misconceptions—your written reasoning is aligned with the Java DSA concepts you have practiced!',
       source: 'fallback',
       mood: 'celebrating',
       actions: [
         { label: 'View Performance Analytics', type: 'navigate', targetPath: '/student/analytics' },
         { label: 'Try Adaptive Practice', type: 'navigate', targetPath: '/student/practice' },
       ],
-      suggestedReplies: ['Check my badges & XP', 'Open Learning Modules', 'Quiz me on Electric Power'],
+      suggestedReplies: ['Check my badges & XP', 'Open Learning Modules', 'Quiz me on Big-O'],
     };
   }
 
   if (q.includes('concept map') || q.includes('graph') || q.includes('prerequisite')) {
     return {
-      reply: 'Your interactive Concept Knowledge Graph maps all 8 Electricity topics from Electric Current up to Joule Heating, color-coded by your live mastery status.',
+      reply: 'Your interactive concept map connects all 8 Java DSA topics by their prerequisites and colors them by your live mastery status.',
       source: 'fallback',
       mood: 'idle',
       actions: [{ label: 'Open Concept Map', type: 'navigate', targetPath: '/student/concept-map' }],
@@ -395,8 +322,8 @@ export function buildInteractiveFallbackResponse(
   if (q.includes('flashcard') || q.includes('flash card') || q.includes('recall') || q.includes('memorize')) {
     return {
       reply: matchedConcept
-        ? `Active-recall flashcards are ready for ${matchedConcept.name} (${matchedConcept.keyFormula}). Flip through definitions, SI units, and exam traps—and mark tricky cards as "Needs Review".`
-        : 'EDVANTA Flashcards cover all 24 high-yield Electricity formulas, circuit rules, and exam traps. Practice them daily to boost recall speed before mock exams!',
+        ? `Active-recall flashcards are ready for ${matchedConcept.name} (${matchedConcept.keyFormula}). Review Java syntax, complexity, and common algorithm pitfalls.`
+        : 'EDVANTA flashcards cover high-yield Java syntax, DSA patterns, complexity, and common interview pitfalls.',
       source: 'fallback',
       mood: 'celebrating',
       actions: [
@@ -407,13 +334,13 @@ export function buildInteractiveFallbackResponse(
         },
         { label: 'Take Timed Mock Exam', type: 'navigate', targetPath: '/student/mock-exam' },
       ],
-      suggestedReplies: ['Start a timed mock exam', 'Give me a formula cheat sheet', 'What should I study next?'],
+      suggestedReplies: ['Start a timed mock exam', 'Give me a DSA cheat sheet', 'What should I study next?'],
     };
   }
 
   if (q.includes('mock') || q.includes('exam') || q.includes('coach')) {
     return {
-      reply: 'The Timed Mock Exam tests all 8 Class 10 Electricity concepts in a 15-minute board-style simulation with a question palette, countdown timer, and instant EDVANTA Coach AI Result Analysis.',
+      reply: 'The timed mock exam tests all 8 Java DSA topics with a question palette, countdown timer, and instant EDVANTA Coach AI analysis.',
       source: 'fallback',
       mood: 'encouraging',
       actions: [
@@ -426,7 +353,7 @@ export function buildInteractiveFallbackResponse(
 
   if (q.includes('diagnostic') || q.includes('baseline')) {
     return {
-      reply: 'The 8-question Electricity Diagnostic calibrates your baseline mastery across every syllabus concept and builds your initial revision schedule.',
+      reply: 'The 8-question Java DSA diagnostic calibrates your baseline mastery across every topic and builds your initial revision schedule.',
       source: 'fallback',
       mood: 'idle',
       actions: [{ label: 'Open Diagnostic Test', type: 'navigate', targetPath: '/student/diagnostic' }],
@@ -460,23 +387,23 @@ export function buildInteractiveFallbackResponse(
             ]
           : []),
       ],
-      suggestedReplies: ['Give me a formula cheat sheet', 'Show my due revisions', 'Check my XP & badges'],
+      suggestedReplies: ['Give me a DSA cheat sheet', 'Show my due revisions', 'Check my XP & badges'],
     };
   }
 
-  if (q.includes('formula') || q.includes('cheat sheet') || q.includes('summary')) {
+  if (q.includes('formula') || q.includes('cheat sheet') || q.includes('summary') || q.includes('syntax')) {
     const formulaList = params.conceptMasteries
       .map((c) => `${c.name}: ${c.keyFormula}`)
       .join(' | ');
     return {
-      reply: `Here are all 8 Class 10 Electricity formulas: ${formulaList}. Ask me to solve a numerical with any of these!`,
+      reply: `Here is your Java DSA quick reference: ${formulaList}. Ask me to explain any pattern or complexity!`,
       source: 'fallback',
       mood: 'idle',
       actions: [
-        { label: 'Explore Simulators', type: 'navigate', targetPath: '/student/modules' },
-        { label: 'Practice Formulas', type: 'navigate', targetPath: '/student/practice' },
+        { label: 'Explore Algorithm Labs', type: 'navigate', targetPath: '/student/modules' },
+        { label: 'Practice DSA', type: 'navigate', targetPath: '/student/practice' },
       ],
-      suggestedReplies: ['Solve I for 12V and 4 ohms', "Explain Ohm's Law", 'Series vs Parallel rule'],
+      suggestedReplies: ['Explain binary search', 'How does a HashMap help?', 'BFS vs DFS'],
     };
   }
 
@@ -514,29 +441,9 @@ export function buildInteractiveFallbackResponse(
     };
   }
 
-  // 3. Concept-specific Physics tutoring
+  // 3. Topic-specific Java DSA tutoring
   if (matchedConcept) {
-    const explanations: Record<string, string> = {
-      'electric-current':
-        'Electric current (I = Q / t) is the rate of charge flow in Amperes (1 A = 1 C/s). Always convert minutes into seconds before multiplying Q = I × t.',
-      'potential-difference':
-        'Potential difference (V = W / Q) is the work done moving 1 Coulomb between two points (1 V = 1 J/C). Voltmeters have high resistance and always connect in parallel.',
-      'ohms-law':
-        "Ohm's Law (V = I × R) holds at constant temperature. At fixed voltage, current I = V / R is inversely proportional to resistance—doubling R halves I!",
-      resistance:
-        'Resistance R = ρ(L / A) depends on wire length L and area A, while resistivity ρ depends only on material and temperature. Stretching a wire to 2L halves area A/2, making R 4× larger.',
-      'series-circuits':
-        'In a series loop, identical current flows through every resistor (I₁ = I₂), while supply voltage divides proportionally to resistance: R_eq = R₁ + R₂.',
-      'parallel-circuits':
-        'In parallel branches, every branch receives full supply voltage (V₁ = V₂ = V) and equivalent resistance drops via 1/R_eq = 1/R₁ + 1/R₂—always invert the sum at the end!',
-      'electric-power':
-        'Electric power is P = V × I = I²R = V²/R. Use P = V²/R when voltage is fixed (like parallel bulbs) and P = I²R when current is shared (like series resistors).',
-      'electrical-energy':
-        "Joule's heating law is H = I²Rt (in Joules, with t in seconds). Household electricity billing uses kWh: E = (Watts / 1000) × hours (1 kWh = 3.6 × 10⁶ J).",
-    };
-    const reply =
-      explanations[matchedConcept.slug] ??
-      `${matchedConcept.name} uses ${matchedConcept.keyFormula}. Your current mastery is ${matchedConcept.masteryScore}%.`;
+    const reply = `${matchedConcept.name}: a useful pattern to remember is ${matchedConcept.keyFormula}. Your current mastery is ${matchedConcept.masteryScore}%.`;
 
     return {
       reply: wantsNavigation ? `Opening ${matchedConcept.name} resources for you! ${reply}` : reply,
@@ -565,7 +472,7 @@ export function buildInteractiveFallbackResponse(
   // 4. Conversational greetings / open-ended catch-all
   if (q.match(/^(hi|hello|hey|yo|good morning|good evening|thanks|thank you)\b/)) {
     return {
-      reply: `Hey ${params.studentName}! I'm Volt—I can explain any Class 10 Electricity topic, solve numericals (like "find current for 12V and 4 ohms"), check your streak/XP/revisions, or jump straight to any module or practice drill. What would you like to do?`,
+      reply: `Hey ${params.studentName}! I'm Byte—I can explain Java DSA topics, walk through algorithm complexity, help you practice interview patterns, or check your streak, XP, and revisions. What would you like to work on?`,
       source: 'fallback',
       mood: 'celebrating',
       actions: [
@@ -573,13 +480,13 @@ export function buildInteractiveFallbackResponse(
         { label: 'Adaptive Practice', type: 'navigate', targetPath: '/student/practice' },
         { label: 'Achievements', type: 'navigate', targetPath: '/student/achievements' },
       ],
-      suggestedReplies: ['What should I study next?', 'Check my badges & streak', 'Solve I for 12V and 4 ohms'],
+      suggestedReplies: ['What should I study next?', 'Check my badges & streak', 'Explain binary search'],
     };
   }
 
   const topWeak = [...params.conceptMasteries].sort((a, b) => a.masteryScore - b.masteryScore)[0];
   return {
-    reply: `I can help with your EDVANTA workspace and Class 10 Electricity! Try asking me things like "What should I study next?", "Solve current for 18V and 6 ohms", "Show my badges and streak", or "Open ${topWeak?.name || "Ohm's Law"} module".`,
+    reply: `I can help with your EDVANTA Java DSA workspace! Ask "What should I study next?", "Explain binary search complexity", "Show my badges and streak", or "Open ${topWeak?.name || 'Arrays & Hashing'} module".`,
     source: 'fallback',
     mood: 'idle',
     actions: topWeak
@@ -592,6 +499,6 @@ export function buildInteractiveFallbackResponse(
           { label: 'Open Learning Modules', type: 'navigate', targetPath: '/student/modules' },
         ]
       : [{ label: 'Open Dashboard', type: 'navigate', targetPath: '/student/dashboard' }],
-    suggestedReplies: ['What should I study next?', 'Give me a formula cheat sheet', 'Show my due revisions'],
+    suggestedReplies: ['What should I study next?', 'Give me a DSA cheat sheet', 'Show my due revisions'],
   };
 }

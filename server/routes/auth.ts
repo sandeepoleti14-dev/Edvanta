@@ -29,7 +29,7 @@ function toAuthUser(row: {
     email: row.email,
     role: row.role,
     classId: row.class_id,
-    className: row.class_name ?? 'Class 10 Physics — Section A',
+    className: row.class_name ?? 'Java DSA — Section A',
     gradeLevel: row.grade_level,
     streakDays: row.streak_days,
   };
@@ -48,7 +48,7 @@ authRouter.post('/register', (req: Request, res: Response) => {
   const cleanEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
   const cleanPassword = typeof password === 'string' ? password : '';
   const cleanRole: UserRole = role === 'teacher' ? 'teacher' : 'student';
-  const cleanGrade = typeof gradeLevel === 'string' && gradeLevel.trim() ? gradeLevel.trim() : 'Class 10';
+  const cleanGrade = typeof gradeLevel === 'string' && gradeLevel.trim() ? gradeLevel.trim() : 'Java DSA';
 
   if (cleanName.length < 2 || cleanName.length > 80) {
     res.status(400).json({ error: 'Please enter a valid full name (2–80 characters).' });
@@ -97,7 +97,7 @@ authRouter.post('/register', (req: Request, res: Response) => {
       email: cleanEmail,
       role: cleanRole,
       class_id: classId,
-      class_name: defaultClass?.name ?? 'Class 10 Physics — Section A',
+      class_name: defaultClass?.name ?? 'Java DSA — Section A',
       grade_level: cleanGrade,
       streak_days: 1,
     }),

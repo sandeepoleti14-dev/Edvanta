@@ -51,7 +51,7 @@ describe('gamificationLogic', () => {
     assert.equal(lv3.xpInLevel, 0);
   });
 
-  it('evolves Volt companion tier cleanly with learner level', () => {
+  it('evolves Byte companion tier cleanly with learner level', () => {
     assert.equal(computeCompanionTier(1).tier, 1);
     assert.equal(computeCompanionTier(3).tier, 2);
     assert.equal(computeCompanionTier(5).tier, 3);

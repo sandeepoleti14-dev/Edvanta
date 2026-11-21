@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
-import { ELECTRICITY_CONCEPTS, SEED_QUESTIONS } from '../curriculum/electricity';
+import { DSA_CONCEPTS, SEED_QUESTIONS } from '../curriculum/dsa';
 import { hashPassword } from '../utils/auth';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -33,7 +33,7 @@ export function initializeDatabase(): void {
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL CHECK(role IN ('student', 'teacher')),
       class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL,
-      grade_level TEXT NOT NULL DEFAULT 'Class 10',
+      grade_level TEXT NOT NULL DEFAULT 'Java DSA',
       streak_days INTEGER NOT NULL DEFAULT 1,
       last_active_at TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -96,6 +96,13 @@ export function initializeDatabase(): void {
       misconception_title TEXT,
       corrective_explanation TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS student_question_exposures (
+      student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+      exposed_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (student_id, question_id)
     );
 
     CREATE TABLE IF NOT EXISTS learner_mastery (
@@ -196,6 +203,19 @@ export function initializeDatabase(): void {
   }
 
   seedInitialData();
+  db.prepare(`
+    UPDATE classes
+    SET name = 'Java DSA — Section A',
+        subject = 'Java Data Structures & Algorithms'
+    WHERE subject = 'Physics: Electricity' OR name = 'Class 10 Physics — Section A'
+  `).run();
+  db.prepare(`
+    INSERT OR IGNORE INTO student_achievements (student_id, badge_id, unlocked_at)
+    SELECT student_id, 'pattern_architect', unlocked_at
+    FROM student_achievements
+    WHERE badge_id = 'circuit_architect'
+  `).run();
+  db.prepare(`DELETE FROM student_achievements WHERE badge_id = 'circuit_architect'`).run();
   backfillStudentEngagementData();
 }
 
@@ -208,7 +228,7 @@ function seedInitialData(): void {
     `);
     const slugToId = new Map<string, number>();
 
-    for (const c of ELECTRICITY_CONCEPTS) {
+    for (const c of DSA_CONCEPTS) {
       const info = insertConcept.run(c.slug, c.name, c.description, c.keyFormula, c.orderIndex, c.graphX, c.graphY);
       slugToId.set(c.slug, Number(info.lastInsertRowid));
     }
@@ -216,36 +236,47 @@ function seedInitialData(): void {
     const insertPrereq = db.prepare(`
       INSERT OR IGNORE INTO concept_prerequisites (concept_id, prerequisite_id) VALUES (?, ?)
     `);
-    for (const c of ELECTRICITY_CONCEPTS) {
+    for (const c of DSA_CONCEPTS) {
       const cid = slugToId.get(c.slug)!;
-      for (const pSlug of c.prerequisiteSlugs) {
+      for (const pSlug of c.prerequisitesSlugs) {
         const pid = slugToId.get(pSlug);
         if (pid) insertPrereq.run(cid, pid);
       }
     }
 
-    const insertQuestion = db.prepare(`
-      INSERT INTO questions (
-        concept_id, difficulty, question_text, options_json, correct_index,
-        explanation, expected_reasoning, misconception_indicators_json, is_diagnostic, source
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'seeded')
-    `);
+  }
 
-    for (const q of SEED_QUESTIONS) {
-      const cid = slugToId.get(q.conceptSlug);
-      if (!cid) continue;
-      insertQuestion.run(
-        cid,
-        q.difficulty,
-        q.questionText,
-        JSON.stringify(q.options),
-        q.correctIndex,
-        q.explanation,
-        q.expectedReasoning,
-        JSON.stringify(q.misconceptionIndicators),
-        q.isDiagnostic ? 1 : 0
-      );
-    }
+  const seededConceptRows = db.prepare('SELECT id, slug FROM concepts').all() as Array<{
+    id: number;
+    slug: string;
+  }>;
+  const conceptIdBySlug = new Map(seededConceptRows.map((concept) => [concept.slug, concept.id]));
+  const findSeedQuestion = db.prepare(
+    `SELECT id FROM questions
+     WHERE concept_id = ? AND lower(trim(question_text)) = lower(trim(?))
+     LIMIT 1`
+  );
+  const insertQuestion = db.prepare(`
+    INSERT INTO questions (
+      concept_id, difficulty, question_text, options_json, correct_index,
+      explanation, expected_reasoning, misconception_indicators_json, is_diagnostic, source
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'seeded')
+  `);
+
+  for (const q of SEED_QUESTIONS) {
+    const conceptId = conceptIdBySlug.get(q.conceptSlug);
+    if (!conceptId || findSeedQuestion.get(conceptId, q.questionText)) continue;
+    insertQuestion.run(
+      conceptId,
+      q.difficulty,
+      q.questionText,
+      JSON.stringify(q.options),
+      q.correctIndex,
+      q.explanation,
+      q.expectedReasoning,
+      JSON.stringify(q.misconceptionIndicators),
+      q.isDiagnostic ? 1 : 0
+    );
   }
 
   const existingUsers = db.prepare('SELECT COUNT(*) as cnt FROM users').get() as { cnt: number };
@@ -253,10 +284,10 @@ function seedInitialData(): void {
     return;
   }
 
-  // Create Class 10 Physics Cohort
+  // Create Java DSA demo cohort
   const classInfo = db
     .prepare(`INSERT INTO classes (name, subject, grade_level) VALUES (?, ?, ?)`)
-    .run('Class 10 Physics — Section A', 'Physics: Electricity', 'Class 10');
+    .run('Java DSA — Section A', 'Java Data Structures & Algorithms', 'Java DSA');
   const classId = Number(classInfo.lastInsertRowid);
 
   // Seed Teacher Account
@@ -285,14 +316,14 @@ function seedInitialData(): void {
       email: 'student@adaptix.edu',
       streak: 5,
       masteries: {
-        'electric-current': { score: 84, attempts: 3, correct: 3, status: 'mastered' },
-        'potential-difference': { score: 74, attempts: 2, correct: 2, status: 'developing' },
-        'ohms-law': { score: 38, attempts: 2, correct: 0, status: 'weak' },
-        resistance: { score: 62, attempts: 2, correct: 1, status: 'developing' },
-        'series-circuits': { score: 34, attempts: 2, correct: 0, status: 'weak' },
-        'parallel-circuits': { score: 46, attempts: 2, correct: 1, status: 'weak' },
-        'electric-power': { score: 78, attempts: 2, correct: 2, status: 'mastered' },
-        'electrical-energy': { score: 56, attempts: 1, correct: 1, status: 'developing' },
+        'complexity-analysis': { score: 84, attempts: 3, correct: 3, status: 'mastered' },
+        'arrays-hashing': { score: 74, attempts: 2, correct: 2, status: 'developing' },
+        'binary-search-sorting': { score: 38, attempts: 2, correct: 0, status: 'weak' },
+        'recursion-backtracking': { score: 62, attempts: 2, correct: 1, status: 'developing' },
+        'linked-lists-stacks': { score: 34, attempts: 2, correct: 0, status: 'weak' },
+        'trees-bst': { score: 46, attempts: 2, correct: 1, status: 'weak' },
+        'heaps-priority-queues': { score: 78, attempts: 2, correct: 2, status: 'mastered' },
+        'graphs-dp': { score: 56, attempts: 1, correct: 1, status: 'developing' },
       },
     },
     {
@@ -300,14 +331,14 @@ function seedInitialData(): void {
       email: 'maya.patel@adaptix.edu',
       streak: 8,
       masteries: {
-        'electric-current': { score: 91, attempts: 4, correct: 4, status: 'mastered' },
-        'potential-difference': { score: 86, attempts: 3, correct: 3, status: 'mastered' },
-        'ohms-law': { score: 76, attempts: 3, correct: 2, status: 'mastered' },
-        resistance: { score: 68, attempts: 2, correct: 1, status: 'developing' },
-        'series-circuits': { score: 42, attempts: 3, correct: 1, status: 'weak' },
-        'parallel-circuits': { score: 39, attempts: 2, correct: 0, status: 'weak' },
-        'electric-power': { score: 72, attempts: 2, correct: 2, status: 'developing' },
-        'electrical-energy': { score: 80, attempts: 2, correct: 2, status: 'mastered' },
+        'complexity-analysis': { score: 91, attempts: 4, correct: 4, status: 'mastered' },
+        'arrays-hashing': { score: 86, attempts: 3, correct: 3, status: 'mastered' },
+        'binary-search-sorting': { score: 76, attempts: 3, correct: 2, status: 'mastered' },
+        'recursion-backtracking': { score: 68, attempts: 2, correct: 1, status: 'developing' },
+        'linked-lists-stacks': { score: 42, attempts: 3, correct: 1, status: 'weak' },
+        'trees-bst': { score: 39, attempts: 2, correct: 0, status: 'weak' },
+        'heaps-priority-queues': { score: 72, attempts: 2, correct: 2, status: 'developing' },
+        'graphs-dp': { score: 80, attempts: 2, correct: 2, status: 'mastered' },
       },
     },
     {
@@ -315,14 +346,14 @@ function seedInitialData(): void {
       email: 'liam.chen@adaptix.edu',
       streak: 3,
       masteries: {
-        'electric-current': { score: 78, attempts: 2, correct: 2, status: 'mastered' },
-        'potential-difference': { score: 66, attempts: 2, correct: 1, status: 'developing' },
-        'ohms-law': { score: 32, attempts: 3, correct: 0, status: 'weak' },
-        resistance: { score: 44, attempts: 2, correct: 1, status: 'weak' },
-        'series-circuits': { score: 36, attempts: 2, correct: 0, status: 'weak' },
-        'parallel-circuits': { score: 28, attempts: 2, correct: 0, status: 'weak' },
-        'electric-power': { score: 52, attempts: 2, correct: 1, status: 'developing' },
-        'electrical-energy': { score: 48, attempts: 1, correct: 0, status: 'weak' },
+        'complexity-analysis': { score: 78, attempts: 2, correct: 2, status: 'mastered' },
+        'arrays-hashing': { score: 66, attempts: 2, correct: 1, status: 'developing' },
+        'binary-search-sorting': { score: 32, attempts: 3, correct: 0, status: 'weak' },
+        'recursion-backtracking': { score: 44, attempts: 2, correct: 1, status: 'weak' },
+        'linked-lists-stacks': { score: 36, attempts: 2, correct: 0, status: 'weak' },
+        'trees-bst': { score: 28, attempts: 2, correct: 0, status: 'weak' },
+        'heaps-priority-queues': { score: 52, attempts: 2, correct: 1, status: 'developing' },
+        'graphs-dp': { score: 48, attempts: 1, correct: 0, status: 'weak' },
       },
     },
     {
@@ -330,14 +361,14 @@ function seedInitialData(): void {
       email: 'sofia.r@adaptix.edu',
       streak: 6,
       masteries: {
-        'electric-current': { score: 88, attempts: 3, correct: 3, status: 'mastered' },
-        'potential-difference': { score: 82, attempts: 2, correct: 2, status: 'mastered' },
-        'ohms-law': { score: 54, attempts: 3, correct: 2, status: 'developing' },
-        resistance: { score: 77, attempts: 3, correct: 2, status: 'mastered' },
-        'series-circuits': { score: 65, attempts: 2, correct: 1, status: 'developing' },
-        'parallel-circuits': { score: 44, attempts: 3, correct: 1, status: 'weak' },
-        'electric-power': { score: 81, attempts: 2, correct: 2, status: 'mastered' },
-        'electrical-energy': { score: 74, attempts: 2, correct: 2, status: 'developing' },
+        'complexity-analysis': { score: 88, attempts: 3, correct: 3, status: 'mastered' },
+        'arrays-hashing': { score: 82, attempts: 2, correct: 2, status: 'mastered' },
+        'binary-search-sorting': { score: 54, attempts: 3, correct: 2, status: 'developing' },
+        'recursion-backtracking': { score: 77, attempts: 3, correct: 2, status: 'mastered' },
+        'linked-lists-stacks': { score: 65, attempts: 2, correct: 1, status: 'developing' },
+        'trees-bst': { score: 44, attempts: 3, correct: 1, status: 'weak' },
+        'heaps-priority-queues': { score: 81, attempts: 2, correct: 2, status: 'mastered' },
+        'graphs-dp': { score: 74, attempts: 2, correct: 2, status: 'developing' },
       },
     },
     {
@@ -345,14 +376,14 @@ function seedInitialData(): void {
       email: 'neha.k@adaptix.edu',
       streak: 4,
       masteries: {
-        'electric-current': { score: 72, attempts: 2, correct: 2, status: 'developing' },
-        'potential-difference': { score: 64, attempts: 2, correct: 1, status: 'developing' },
-        'ohms-law': { score: 41, attempts: 2, correct: 1, status: 'weak' },
-        resistance: { score: 58, attempts: 2, correct: 1, status: 'developing' },
-        'series-circuits': { score: 45, attempts: 2, correct: 1, status: 'weak' },
-        'parallel-circuits': { score: 35, attempts: 2, correct: 0, status: 'weak' },
-        'electric-power': { score: 63, attempts: 2, correct: 1, status: 'developing' },
-        'electrical-energy': { score: 59, attempts: 2, correct: 1, status: 'developing' },
+        'complexity-analysis': { score: 72, attempts: 2, correct: 2, status: 'developing' },
+        'arrays-hashing': { score: 64, attempts: 2, correct: 1, status: 'developing' },
+        'binary-search-sorting': { score: 41, attempts: 2, correct: 1, status: 'weak' },
+        'recursion-backtracking': { score: 58, attempts: 2, correct: 1, status: 'developing' },
+        'linked-lists-stacks': { score: 45, attempts: 2, correct: 1, status: 'weak' },
+        'trees-bst': { score: 35, attempts: 2, correct: 0, status: 'weak' },
+        'heaps-priority-queues': { score: 63, attempts: 2, correct: 1, status: 'developing' },
+        'graphs-dp': { score: 59, attempts: 2, correct: 1, status: 'developing' },
       },
     },
   ];
@@ -409,7 +440,7 @@ function seedInitialData(): void {
       hashPassword('AdaptixLearn2026!'),
       'student',
       classId,
-      'Class 10',
+      'Java DSA',
       student.streak,
       daysAgoIso
     );
@@ -434,32 +465,32 @@ function seedInitialData(): void {
         const isCorrect = m.score >= 55 ? 1 : 0;
         const selectedIdx = isCorrect ? q.correctIndex : (q.correctIndex + 1) % 4;
         const reasoning =
-          slug === 'ohms-law' && !isCorrect
-            ? 'Current increases because resistance increases when connected to the battery.'
-            : slug === 'series-circuits' && !isCorrect
-            ? 'Voltage splits equally and current gets used up across the first resistor.'
-            : slug === 'parallel-circuits' && !isCorrect
-            ? 'Added 6 and 3 directly or forgot to flip the fraction after 1/R.'
+          slug === 'complexity-analysis' && !isCorrect
+            ? 'Every nested loop is O(N squared), no matter how the inner index changes.'
+            : slug === 'arrays-hashing' && !isCorrect
+            ? 'A HashMap lookup scans every entry, so the lookup is always O(N).'
+            : slug === 'graphs-dp' && !isCorrect
+            ? 'BFS can revisit the same nodes forever when the graph contains a cycle.'
             : isCorrect
-            ? 'Applied the fundamental relationship and checked units carefully.'
-            : 'Estimated from the numbers given in the prompt.';
+            ? 'Applied the algorithm pattern and checked the edge cases.'
+            : 'Estimated from the examples in the prompt.';
 
         const misconceptionTitle =
-          slug === 'ohms-law' && !isCorrect
-            ? 'Misunderstands inverse relationship between current and resistance'
-            : slug === 'series-circuits' && !isCorrect
-            ? 'Confuses current sharing and voltage division in series circuits'
-            : slug === 'parallel-circuits' && !isCorrect
-            ? 'Applies series addition or omits reciprocal in parallel resistance'
+          slug === 'complexity-analysis' && !isCorrect
+            ? 'Treats every nested loop as quadratic'
+            : slug === 'arrays-hashing' && !isCorrect
+            ? 'Confuses average HashMap lookup with linear search'
+            : slug === 'graphs-dp' && !isCorrect
+            ? 'Does not track visited graph nodes'
             : null;
 
         const corrective =
-          slug === 'ohms-law' && !isCorrect
-            ? "According to Ohm's law (I = V / R), current decreases when resistance increases at constant voltage."
-            : slug === 'series-circuits' && !isCorrect
-            ? 'In a series loop, identical current flows through all resistors while voltage divides proportionally to resistance.'
-            : slug === 'parallel-circuits' && !isCorrect
-            ? 'For parallel resistors, sum reciprocals (1/R_eq = 1/R₁ + 1/R₂) and invert the result.'
+          slug === 'complexity-analysis' && !isCorrect
+            ? 'Analyze each loop update separately: a doubling inner index runs O(log N) times, giving O(N log N) total work.'
+            : slug === 'arrays-hashing' && !isCorrect
+            ? 'HashMap get and containsKey are O(1) on average, so scanning N items is O(N) total.'
+            : slug === 'graphs-dp' && !isCorrect
+            ? 'Mark each node visited when adding it to the queue so cycles cannot cause duplicate visits.'
             : null;
 
         insertAnswer.run(
@@ -485,7 +516,7 @@ function seedInitialData(): void {
             q.id,
             reasoning,
             misconceptionTitle,
-            'Student reasoning contradicts circuit conservation or proportionality laws.',
+            'Student reasoning conflicts with the expected Java DSA algorithm invariant.',
             corrective,
             new Date(now - 2 * oneDay).toISOString()
           );
@@ -602,7 +633,7 @@ function backfillStudentEngagementData(): void {
         .get(s.id) as { cnt: number };
       if (existingMods.cnt === 0) {
         const starterConcepts = db
-          .prepare(`SELECT id FROM concepts WHERE slug IN ('electric-current', 'potential-difference')`)
+          .prepare(`SELECT id FROM concepts WHERE slug IN ('complexity-analysis', 'arrays-hashing')`)
           .all() as Array<{ id: number }>;
         const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
         for (const c of starterConcepts) {
@@ -619,9 +650,9 @@ function backfillStudentEngagementData(): void {
           INSERT OR IGNORE INTO student_flashcard_progress (student_id, card_id, confidence, review_count, last_reviewed_at)
           VALUES (?, ?, ?, 1, ?)
         `);
-        insertFc.run(s.id, 'fc-current-1', 'known', twoDaysAgo);
-        insertFc.run(s.id, 'fc-current-2', 'known', twoDaysAgo);
-        insertFc.run(s.id, 'fc-ohms-2', 'review', twoDaysAgo);
+        insertFc.run(s.id, 'fc-dsa-1', 'known', twoDaysAgo);
+        insertFc.run(s.id, 'fc-dsa-2', 'known', twoDaysAgo);
+        insertFc.run(s.id, 'fc-dsa-3', 'review', twoDaysAgo);
       }
 
       const existingNotes = db
@@ -629,7 +660,7 @@ function backfillStudentEngagementData(): void {
         .get(s.id) as { cnt: number };
       if (existingNotes.cnt === 0) {
         const starterConcept = db
-          .prepare(`SELECT id FROM concepts WHERE slug = 'electric-current' LIMIT 1`)
+          .prepare(`SELECT id FROM concepts WHERE slug = 'complexity-analysis' LIMIT 1`)
           .get() as { id: number } | undefined;
         if (starterConcept) {
           db.prepare(`INSERT OR IGNORE INTO student_saved_notes (student_id, concept_id, saved_at) VALUES (?, ?, ?)`)

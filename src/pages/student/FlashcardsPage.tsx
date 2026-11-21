@@ -196,7 +196,7 @@ export function FlashcardsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="font-display text-lg font-semibold text-[#14172B] dark:text-[#F4F6FF]">
-                Class 10 Electricity — Rapid Recall Deck
+                Java DSA — Rapid Recall Deck
               </h2>
               <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-0.5">
                 {deck.stats.known} known · {deck.stats.needsReview} needs review · {deck.stats.unreviewed} unreviewed
@@ -273,7 +273,7 @@ export function FlashcardsPage() {
                 No flashcards match this filter
               </h3>
               <p className="text-sm text-[#4E5674] dark:text-[#B4BDD9] mt-1">
-                Switch back to &ldquo;All&rdquo; or pick another Electricity concept to keep drilling.
+                Switch back to &ldquo;All&rdquo; or pick another DSA topic to keep drilling.
               </p>
             </div>
             <button
@@ -324,7 +324,7 @@ export function FlashcardsPage() {
                 className={`flashcard-card w-full text-left block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7055F7] rounded-2xl ${
                   flipped ? 'is-flipped' : ''
                 }`}
-                style={{ minHeight: '295px' }}
+                style={{ minHeight: '420px' }}
               >
                 {/* Front Face */}
                 <div className="flashcard-face absolute inset-0 rounded-2xl border border-[#E2E6F3] dark:border-[#2B3150] bg-white dark:bg-[#181B2E] p-7 sm:p-10 flex flex-col justify-between shadow-[var(--shadow-card)]">
@@ -360,10 +360,19 @@ export function FlashcardsPage() {
                     <span className="font-mono text-[#35C9D8] font-semibold">{activeCard.formulaHint}</span>
                   </div>
 
-                  <div className="my-auto py-4 space-y-3">
+                  <div className="my-auto py-4 space-y-3 max-h-[270px] overflow-y-auto">
                     <p className="text-base sm:text-lg font-medium leading-relaxed text-white">
                       {activeCard.backAnswer}
                     </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-[#35C9D8]">Worked solution</p>
+                    <ol
+                      aria-label="Worked solution steps"
+                      className="list-decimal pl-5 text-xs sm:text-sm text-[#D7DCF0] space-y-1.5"
+                    >
+                      {activeCard.solutionSteps.map((step, index) => (
+                        <li key={`${activeCard.id}-step-${index}`}>{step}</li>
+                      ))}
+                    </ol>
                     <p className="text-xs sm:text-sm text-[#B4BDD9] bg-[#212640] border border-[#2B3150] rounded-xl px-3.5 py-2.5">
                       <strong className="text-[#F6B94A]">Exam Tip:</strong> {activeCard.examTip}
                     </p>

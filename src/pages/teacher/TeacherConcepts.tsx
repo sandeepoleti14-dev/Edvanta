@@ -54,7 +54,7 @@ export function TeacherConcepts() {
               Mastery Tier Distribution Across Cohort
             </h2>
             <p className="text-xs text-[#6E7696] dark:text-[#8892B5] mt-0.5 mb-4">
-              Number of students at Mastered, Developing, Weak, or Not Started per Electricity concept
+              Number of students at Mastered, Developing, Weak, or Not Started per Java DSA topic
             </p>
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">

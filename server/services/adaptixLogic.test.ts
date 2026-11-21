@@ -10,7 +10,7 @@ import {
   buildInteractiveFallbackResponse,
   CompanionStudentSnapshot,
   sanitizeCompanionActions,
-  solveInlinePhysicsNumerical,
+  answerInlineDsaQuestion,
 } from './companionBrain';
 import { LearnerConceptMastery } from '../../shared/types';
 
@@ -62,10 +62,10 @@ test('selectAdaptiveTarget prioritizes weak concepts over mastered concepts and 
   const concepts: LearnerConceptMastery[] = [
     {
       id: 1,
-      slug: 'electric-current',
-      name: 'Electric Current',
+      slug: 'complexity-analysis',
+      name: 'Time & Space Complexity',
       description: '',
-      keyFormula: 'I=Q/t',
+      keyFormula: 'O(N log N)',
       orderIndex: 1,
       graphX: 0,
       graphY: 0,
@@ -78,10 +78,10 @@ test('selectAdaptiveTarget prioritizes weak concepts over mastered concepts and 
     },
     {
       id: 2,
-      slug: 'ohms-law',
-      name: "Ohm's Law",
+      slug: 'arrays-hashing',
+      name: 'Arrays & Hashing',
       description: '',
-      keyFormula: 'V=IR',
+      keyFormula: 'map.get(key)',
       orderIndex: 3,
       graphX: 0,
       graphY: 0,
@@ -95,7 +95,7 @@ test('selectAdaptiveTarget prioritizes weak concepts over mastered concepts and 
   ];
 
   const target = selectAdaptiveTarget(concepts, [1]);
-  assert.equal(target.concept.slug, 'ohms-law');
+  assert.equal(target.concept.slug, 'arrays-hashing');
   assert.equal(target.difficulty, 'easy');
   assert.equal(pickDifficultyForMastery(62, 2), 'medium');
   assert.equal(pickDifficultyForMastery(82, 4), 'hard');
@@ -125,38 +125,38 @@ test('spaced repetition schedules weak concepts sooner than mastered concepts', 
   assert.equal(resolveRevisionStatus(weakSchedule.scheduledForIso, baseDate.toISOString(), baseDate), 'completed');
 });
 
-test('misconception engine reports uncertain when reasoning is insufficient and detects inverse Ohms law flaw', () => {
+test('misconception engine reports uncertain when reasoning is insufficient and detects a Big-O misconception', () => {
   assert.equal(hasSufficientReasoning('idk'), false);
-  assert.equal(hasSufficientReasoning('Current increases because resistance increases'), true);
+  assert.equal(hasSufficientReasoning('Every nested loop is always quadratic'), true);
 
   const insufficient = analyzeReasoningDeterministic({
-    conceptSlug: 'ohms-law',
-    conceptName: "Ohm's Law",
-    questionText: 'What happens to current when R doubles?',
-    selectedOptionText: 'Current doubles',
-    correctOptionText: 'Current becomes half',
+    conceptSlug: 'complexity-analysis',
+    conceptName: 'Time & Space Complexity',
+    questionText: 'What is the complexity of an N loop with a doubling inner index?',
+    selectedOptionText: 'O(N^2)',
+    correctOptionText: 'O(N log N)',
     isCorrect: false,
-    explanation: 'I = V/R',
-    expectedReasoning: 'Inverse relationship',
+    explanation: 'The outer loop is N and the inner loop is log N.',
+    expectedReasoning: 'Multiply the iteration counts.',
     studentReasoning: 'guess',
   });
   assert.equal(insufficient.confidenceStatus, 'uncertain');
   assert.equal(insufficient.misconceptionDetected, false);
 
   const identified = analyzeReasoningDeterministic({
-    conceptSlug: 'ohms-law',
-    conceptName: "Ohm's Law",
-    questionText: 'What happens to current when R doubles?',
-    selectedOptionText: 'Current doubles',
-    correctOptionText: 'Current becomes half',
+    conceptSlug: 'complexity-analysis',
+    conceptName: 'Time & Space Complexity',
+    questionText: 'What is the complexity of an N loop with a doubling inner index?',
+    selectedOptionText: 'O(N^2)',
+    correctOptionText: 'O(N log N)',
     isCorrect: false,
-    explanation: 'I = V/R',
-    expectedReasoning: 'Inverse relationship',
-    studentReasoning: 'Current increases because resistance increases',
+    explanation: 'The outer loop is N and the inner loop is log N.',
+    expectedReasoning: 'Multiply the iteration counts.',
+    studentReasoning: 'Every nested loop is always quadratic',
   });
   assert.equal(identified.confidenceStatus, 'identified');
   assert.equal(identified.misconceptionDetected, true);
-  assert.ok(identified.misconceptionTitle?.toLowerCase().includes('inverse'));
+  assert.ok(identified.misconceptionTitle?.toLowerCase().includes('loop'));
 });
 
 test('computeUpdatedStreak handles same-day idempotency, consecutive increment, and gap reset', () => {
@@ -199,9 +199,9 @@ test('evaluateAchievements unlocks qualifying badges, computes newlyUnlocked dif
     streakDays: 5,
     diagnosticCount: 1,
     conceptMasteries: [
-      makeMastery('electric-current', 'mastered'),
-      makeMastery('series-circuits', 'mastered'),
-      makeMastery('parallel-circuits', 'mastered'),
+      makeMastery('complexity-analysis', 'mastered'),
+      makeMastery('arrays-hashing', 'mastered'),
+      makeMastery('graphs-dp', 'mastered'),
     ],
     resolvedMisconceptionsCount: 1,
     completedModulesCount: 3,
@@ -213,21 +213,21 @@ test('evaluateAchievements unlocks qualifying badges, computes newlyUnlocked dif
   assert.ok(newlyIds.includes('streak_3'));
   assert.ok(newlyIds.includes('streak_5'));
   assert.ok(newlyIds.includes('first_mastery'));
-  assert.ok(newlyIds.includes('circuit_architect'));
+  assert.ok(newlyIds.includes('pattern_architect'));
   assert.ok(newlyIds.includes('misconception_buster'));
   assert.ok(newlyIds.includes('module_explorer'));
   assert.equal(res.totalXp, 100 + 150 + 250 + 150 + 300 + 200 + 150);
 });
 
-test('companionBrain solves inline physics numericals, sanitizes routes, and returns interactive app actions', () => {
-  const solvedOhms = solveInlinePhysicsNumerical('Calculate current for 12V and 4 ohms');
-  assert.ok(solvedOhms);
-  assert.ok(solvedOhms.answerText.includes('3 A'));
-  assert.equal(solvedOhms.conceptSlug, 'ohms-law');
+test('companionBrain answers Java DSA questions, sanitizes routes, and returns interactive app actions', () => {
+  const binarySearch = answerInlineDsaQuestion('What is binary search complexity for N=1024 elements?');
+  assert.ok(binarySearch);
+  assert.ok(binarySearch.answerText.includes('O(log N)'));
+  assert.equal(binarySearch.conceptSlug, 'binary-search-sorting');
 
-  const solvedEnergy = solveInlinePhysicsNumerical('How much energy does 1500W use in 2 hours?');
-  assert.ok(solvedEnergy);
-  assert.ok(solvedEnergy.answerText.includes('3 kWh'));
+  const twoSum = answerInlineDsaQuestion('How does a HashMap help with Two Sum?');
+  assert.ok(twoSum);
+  assert.ok(twoSum.answerText.includes('O(N)'));
 
   const snapshot: CompanionStudentSnapshot = {
     studentName: 'Aarav Sharma',
@@ -241,13 +241,13 @@ test('companionBrain solves inline physics numericals, sanitizes routes, and ret
     unlockedBadgeNames: ['Baseline Calibrated', '3-Day Momentum', 'Module Explorer'],
     nextLockedBadges: [{ title: 'Weekly Champion', progress: 5, target: 7 }],
     conceptMasteries: [
-      { id: 1, slug: 'electric-current', name: 'Electric Current', masteryScore: 84, status: 'mastered', keyFormula: 'I = Q / t' },
-      { id: 3, slug: 'ohms-law', name: "Ohm's Law", masteryScore: 38, status: 'weak', keyFormula: 'V = I × R' },
+      { id: 1, slug: 'complexity-analysis', name: 'Time & Space Complexity', masteryScore: 84, status: 'mastered', keyFormula: 'O(N log N)' },
+      { id: 3, slug: 'arrays-hashing', name: 'Arrays & Hashing', masteryScore: 38, status: 'weak', keyFormula: 'map.get(key)' },
     ],
     completedModulesCount: 3,
-    incompleteModules: [{ conceptId: 4, slug: 'resistance', title: '04. Resistance & Material Resistivity' }],
-    dueRevisions: [{ conceptId: 3, conceptName: "Ohm's Law", reason: 'Mastery below 50%' }],
-    activeMisconceptions: [{ conceptName: "Ohm's Law", misconceptionTitle: 'Misunderstands inverse relationship' }],
+    incompleteModules: [{ conceptId: 4, slug: 'recursion-backtracking', title: '04. Recursion & Backtracking' }],
+    dueRevisions: [{ conceptId: 3, conceptName: 'Arrays & Hashing', reason: 'Mastery below 50%' }],
+    activeMisconceptions: [{ conceptName: 'Arrays & Hashing', misconceptionTitle: 'Misses the HashMap lookup trade-off' }],
     history: [],
     message: 'What are my badges and streak?',
   };
@@ -260,7 +260,7 @@ test('companionBrain solves inline physics numericals, sanitizes routes, and ret
   const allowed = buildAllowedRouteSet(snapshot.conceptMasteries);
   const sanitized = sanitizeCompanionActions(
     [
-      { label: 'Practice Ohms', targetPath: '/student/practice?conceptId=3' },
+      { label: 'Practice Arrays', targetPath: '/student/practice?conceptId=3' },
       { label: 'Injected Bad Route', targetPath: 'https://evil.example.com' },
       { label: 'Duplicate', targetPath: '/student/practice?conceptId=3' },
     ],

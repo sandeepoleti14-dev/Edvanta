@@ -81,25 +81,16 @@ export function analyzeReasoningDeterministic(input: FallbackAnalysisInput): Rea
   const text = input.studentReasoning.toLowerCase();
 
   if (input.isCorrect) {
-    // Check if right answer was reached with an inverted or suspicious statement
-    if (
-      input.conceptSlug === 'ohms-law' &&
-      text.includes('increase') &&
-      text.includes('current') &&
-      text.includes('resistance') &&
-      !text.includes('decreas') &&
-      !text.includes('inverse') &&
-      !text.includes('half')
-    ) {
+    if (input.conceptSlug === 'complexity-analysis' && text.includes('always') && text.includes('quadratic')) {
       return {
         source: 'fallback',
         confidenceStatus: 'identified',
         misconceptionDetected: true,
-        misconceptionTitle: 'Assumes direct proportionality between current and resistance',
-        conceptualError: 'Even though the selected option matched, the written reasoning implies current increases as resistance increases.',
-        correctiveExplanation: `According to Ohm's law (I = V / R), current is inversely proportional to resistance at constant voltage. ${input.explanation}`,
+        misconceptionTitle: 'Treats every nested loop as quadratic',
+        conceptualError: 'The selected option is correct, but the written reasoning overlooks how the inner loop changes its range.',
+        correctiveExplanation: `Analyze each loop independently; a doubling index takes logarithmic iterations. ${input.explanation}`,
         reasoningQuality: 'flawed',
-        recommendedFocus: "Practice inverse proportionality problems in Ohm's Law.",
+        recommendedFocus: 'Practice counting iterations for loops that double or halve their index.',
       };
     }
 
@@ -115,100 +106,67 @@ export function analyzeReasoningDeterministic(input: FallbackAnalysisInput): Rea
     };
   }
 
-  // Incorrect answer with sufficient written reasoning: match common Class 10 Physics misconceptions
-  if (
-    input.conceptSlug === 'ohms-law' &&
-    ((text.includes('increase') && text.includes('current')) || text.includes('proportional') || text.includes('same'))
-  ) {
+  const misconceptionByTopic: Record<string, { title: string; clue: boolean; correction: string; focus: string }> = {
+    'complexity-analysis': {
+      title: 'Miscounts loop iterations',
+      clue: text.includes('always') || text.includes('every iteration'),
+      correction: 'Count iterations from the update step: doubling or halving an index produces logarithmic work.',
+      focus: 'Compare linear, logarithmic, and nested-loop growth.',
+    },
+    'arrays-hashing': {
+      title: 'Misses the HashMap lookup trade-off',
+      clue: text.includes('nested') || text.includes('sort') || text.includes('constant space'),
+      correction: 'A HashMap reduces average lookup to O(1), usually trading O(N) extra space for a linear scan.',
+      focus: 'Practice choosing between brute force, sorting, and hashing.',
+    },
+    'binary-search-sorting': {
+      title: 'Does not preserve the binary-search invariant',
+      clue: text.includes('sorted') || text.includes('mid') || text.includes('half'),
+      correction: 'Maintain a sorted search range, compute mid without overflow, and discard only a half proven not to contain the target.',
+      focus: 'Trace low, mid, and high after every comparison.',
+    },
+    'recursion-backtracking': {
+      title: 'Does not restore recursive state',
+      clue: text.includes('base case') || text.includes('remove') || text.includes('copy') || text.includes('stack'),
+      correction: 'Backtracking needs a base case, a choice, recursive exploration, and undoing that choice before the next branch.',
+      focus: 'Trace the call stack and mutable path for a small input.',
+    },
+    'linked-lists-stacks': {
+      title: 'Loses a pointer during list rewiring',
+      clue: text.includes('next') || text.includes('pointer') || text.includes('fast') || text.includes('slow'),
+      correction: 'Save the next node before changing links; verify null checks before dereferencing pointers.',
+      focus: 'Draw each pointer transition for a three-node list.',
+    },
+    'trees-bst': {
+      title: 'Checks only local tree relationships',
+      clue: text.includes('parent') || text.includes('child') || text.includes('ancestor') || text.includes('left') || text.includes('right'),
+      correction: 'BST validation must carry lower and upper bounds from every ancestor, not just compare a node with its children.',
+      focus: 'Practice DFS with min/max bounds and null base cases.',
+    },
+    'heaps-priority-queues': {
+      title: 'Confuses heap ordering or operation cost',
+      clue: text.includes('min') || text.includes('max') || text.includes('peek') || text.includes('poll'),
+      correction: 'Java PriorityQueue is a min-heap by default: peek is O(1), while offer and poll are O(log N).',
+      focus: 'Choose heap direction and size based on the Top-K requirement.',
+    },
+    'graphs-dp': {
+      title: 'Misses visited-state or subproblem reuse',
+      clue: text.includes('visited') || text.includes('cycle') || text.includes('memo') || text.includes('queue'),
+      correction: 'Mark graph nodes visited when enqueuing them; memoize repeated DP states to avoid revisiting work.',
+      focus: 'Trace BFS queue contents or write the DP state and transition.',
+    },
+  };
+  const rule = misconceptionByTopic[input.conceptSlug];
+  if (rule?.clue) {
     return {
       source: 'fallback',
       confidenceStatus: 'identified',
       misconceptionDetected: true,
-      misconceptionTitle: 'Misunderstands inverse relationship between current and resistance',
-      conceptualError: 'Student reasoning treats electric current as increasing or remaining constant when resistance rises at fixed voltage.',
-      correctiveExplanation: `By Ohm's Law (I = V / R), resistance opposes charge flow. When resistance increases at constant voltage, current must decrease proportionally.`,
+      misconceptionTitle: rule.title,
+      conceptualError: `The reasoning led to "${input.selectedOptionText}" instead of "${input.correctOptionText}".`,
+      correctiveExplanation: `${rule.correction} ${input.explanation}`,
       reasoningQuality: 'flawed',
-      recommendedFocus: "Review Ohm's Law (I = V/R) inverse ratio examples.",
-    };
-  }
-
-  if (
-    input.conceptSlug === 'series-circuits' &&
-    (text.includes('equal') || text.includes('split') || text.includes('divide') || text.includes('used up') || text.includes('consumed'))
-  ) {
-    return {
-      source: 'fallback',
-      confidenceStatus: 'identified',
-      misconceptionDetected: true,
-      misconceptionTitle: 'Confuses current sharing and voltage division in series circuits',
-      conceptualError: 'Student assumes current divides or is consumed in series, or that voltage always splits equally regardless of resistance.',
-      correctiveExplanation: `In a series circuit there is only one path, so the exact same current flows through every resistor while voltage drops divide proportionally to resistance (V = I·R).`,
-      reasoningQuality: 'flawed',
-      recommendedFocus: 'Trace current continuity and voltage drops in multi-resistor series loops.',
-    };
-  }
-
-  if (
-    input.conceptSlug === 'parallel-circuits' &&
-    (text.includes('add') || text.includes('sum') || text.includes('reciprocal') || text.includes('equal current') || text.includes('0.5'))
-  ) {
-    return {
-      source: 'fallback',
-      confidenceStatus: 'identified',
-      misconceptionDetected: true,
-      misconceptionTitle: 'Applies series addition or omits reciprocal in parallel resistance',
-      conceptualError: 'Student adds branch resistances directly or stops after computing 1/R_eq without inverting back to R_eq.',
-      correctiveExplanation: `Parallel branches offer multiple paths, lowering total resistance: compute 1/R_eq = 1/R₁ + 1/R₂ and always take the reciprocal at the end.`,
-      reasoningQuality: 'flawed',
-      recommendedFocus: 'Practice reciprocal steps and branch-current calculations in parallel circuits.',
-    };
-  }
-
-  if (
-    input.conceptSlug === 'resistance' &&
-    (text.includes('same') || text.includes('cancel') || text.includes('half') || text.includes('resistivity changes'))
-  ) {
-    return {
-      source: 'fallback',
-      confidenceStatus: 'identified',
-      misconceptionDetected: true,
-      misconceptionTitle: 'Conflates geometric resistance factors or confuses resistance with resistivity',
-      conceptualError: 'Student overlooks how length and cross-sectional area combine in R = ρL/A or treats material resistivity as dimension-dependent.',
-      correctiveExplanation: input.explanation,
-      reasoningQuality: 'flawed',
-      recommendedFocus: 'Compare R = ρL/A geometric scaling against intrinsic resistivity ρ.',
-    };
-  }
-
-  if (
-    (input.conceptSlug === 'electric-power' || input.conceptSlug === 'electrical-energy') &&
-    (text.includes('half') || text.includes('linear') || text.includes('3 times') || text.includes('watt') || text.includes('divide'))
-  ) {
-    return {
-      source: 'fallback',
-      confidenceStatus: 'identified',
-      misconceptionDetected: true,
-      misconceptionTitle: 'Assumes linear scaling instead of quadratic V²/R or I²R dependence',
-      conceptualError: 'Student applies a linear relationship where power or Joule heating scales with the square of voltage or current.',
-      correctiveExplanation: input.explanation,
-      reasoningQuality: 'flawed',
-      recommendedFocus: 'Drill quadratic scaling in P = V²/R and H = I²Rt.',
-    };
-  }
-
-  if (
-    (input.conceptSlug === 'electric-current' || input.conceptSlug === 'potential-difference') &&
-    (text.includes('multiply') || text.includes('minute') || text.includes('divide'))
-  ) {
-    return {
-      source: 'fallback',
-      confidenceStatus: 'identified',
-      misconceptionDetected: true,
-      misconceptionTitle: 'Formula inversion or unit conversion oversight',
-      conceptualError: 'Student inverted the ratio in I = Q/t or V = W/Q, or left time in minutes instead of converting to SI seconds.',
-      correctiveExplanation: input.explanation,
-      reasoningQuality: 'partial',
-      recommendedFocus: `Verify SI units (coulombs, seconds, joules) and formula rearrangement for ${input.conceptName}.`,
+      recommendedFocus: rule.focus,
     };
   }
 
@@ -220,6 +178,6 @@ export function analyzeReasoningDeterministic(input: FallbackAnalysisInput): Rea
     conceptualError: `The reasoning led to "${input.selectedOptionText}" instead of "${input.correctOptionText}".`,
     correctiveExplanation: `${input.explanation} Key reasoning: ${input.expectedReasoning}`,
     reasoningQuality: 'partial',
-    recommendedFocus: `Review the fundamental formula and proportional relationships in ${input.conceptName}.`,
+    recommendedFocus: `Review the Java DSA pattern and edge cases in ${input.conceptName}.`,
   };
 }
