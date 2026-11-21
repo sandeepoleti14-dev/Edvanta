@@ -40,32 +40,39 @@ function VoltMascotSvg({ mood, size = 44 }: { mood: CompanionMood; size?: number
         className={animClass}
         aria-hidden="true"
       >
+        <defs>
+          <linearGradient id="volt-edvanta-ring" x1="8" y1="45" x2="56" y2="22" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#526BFF" />
+            <stop offset="100%" stopColor="#8B6CFF" />
+          </linearGradient>
+        </defs>
+
         {/* Antenna */}
-        <line x1="32" y1="7" x2="32" y2="15" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
+        <line x1="32" y1="7" x2="32" y2="15" stroke="#94A3B8" strokeWidth="3" strokeLinecap="round" />
         <circle cx="32" cy="6" r="4" fill={visorAccent} />
 
-        {/* Orbital ring */}
+        {/* Orbital ring in EDVANTA blue-violet */}
         <ellipse
           cx="32"
           cy="35"
           rx="26"
           ry="10"
           fill="none"
-          stroke={visorAccent}
-          strokeOpacity="0.28"
-          strokeWidth="2"
+          stroke="url(#volt-edvanta-ring)"
+          strokeOpacity="0.45"
+          strokeWidth="2.2"
           transform="rotate(-14 32 35)"
         />
 
-        {/* Bot head */}
-        <rect x="13" y="15" width="38" height="33" rx="11" fill="#101827" stroke="#334155" strokeWidth="2" />
+        {/* Bot head chassis */}
+        <rect x="13" y="15" width="38" height="33" rx="11" fill="#101827" stroke="#526BFF" strokeOpacity="0.55" strokeWidth="2" />
 
         {/* Side ear terminals */}
-        <rect x="8" y="26" width="5" height="11" rx="2.5" fill="#475569" />
-        <rect x="51" y="26" width="5" height="11" rx="2.5" fill="#475569" />
+        <rect x="8" y="26" width="5" height="11" rx="2.5" fill="#526BFF" />
+        <rect x="51" y="26" width="5" height="11" rx="2.5" fill="#8B6CFF" />
 
         {/* Visor */}
-        <rect x="18" y="21" width="28" height="16" rx="6" fill="#0F172A" stroke={visorAccent} strokeWidth="1.75" />
+        <rect x="18" y="21" width="28" height="16" rx="6" fill="#0B1220" stroke={visorAccent} strokeWidth="1.75" />
 
         {/* Expressive eyes */}
         {mood === 'celebrating' ? (
@@ -75,8 +82,8 @@ function VoltMascotSvg({ mood, size = 44 }: { mood: CompanionMood; size?: number
           </>
         ) : mood === 'thinking' ? (
           <>
-            <circle cx="25" cy="28" r="2.6" fill="#A78BFA" />
-            <line x1="35" y1="28" x2="41" y2="28" stroke="#A78BFA" strokeWidth="2.4" strokeLinecap="round" />
+            <circle cx="25" cy="28" r="2.6" fill="#8B6CFF" />
+            <line x1="35" y1="28" x2="41" y2="28" stroke="#8B6CFF" strokeWidth="2.4" strokeLinecap="round" />
           </>
         ) : mood === 'encouraging' ? (
           <>
@@ -85,8 +92,8 @@ function VoltMascotSvg({ mood, size = 44 }: { mood: CompanionMood; size?: number
           </>
         ) : (
           <>
-            <circle cx="25" cy="29" r="2.8" fill="#60A5FA" />
-            <circle cx="39" cy="29" r="2.8" fill="#60A5FA" />
+            <circle cx="25" cy="29" r="2.8" fill="#526BFF" />
+            <circle cx="39" cy="29" r="2.8" fill="#8B6CFF" />
           </>
         )}
 
@@ -96,12 +103,12 @@ function VoltMascotSvg({ mood, size = 44 }: { mood: CompanionMood; size?: number
         ) : mood === 'encouraging' ? (
           <path d="M27 42 Q32 44 37 42" fill="none" stroke="#FBBF24" strokeWidth="2" strokeLinecap="round" />
         ) : (
-          <line x1="27" y1="42" x2="37" y2="42" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <line x1="27" y1="42" x2="37" y2="42" stroke="#8B6CFF" strokeWidth="2" strokeLinecap="round" />
         )}
 
         {/* Base thrusters */}
-        <rect x="23" y="48" width="18" height="5" rx="2.5" fill="#334155" />
-        <polygon points="28,53 36,53 32,59" fill={visorAccent} fillOpacity="0.8" />
+        <rect x="23" y="48" width="18" height="5" rx="2.5" fill="#1E293B" />
+        <polygon points="28,53 36,53 32,59" fill={visorAccent} fillOpacity="0.85" />
       </svg>
     </div>
   );
@@ -202,7 +209,7 @@ export function StudyCompanion() {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-display text-sm font-semibold text-white">Volt Study Companion</h2>
+                  <h2 className="font-display text-sm font-semibold text-white">Volt · EDVANTA Companion</h2>
                 </div>
                 <p className="text-xs text-slate-300 truncate">
                   {MOOD_LABELS[mood]}

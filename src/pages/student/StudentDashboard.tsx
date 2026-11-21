@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { ArrowRight, AlertCircle, Award, CalendarClock, Flame, Layers, Target, CheckCircle2 } from 'lucide-react';
 import { AppShell } from '../../components/AppShell';
+import { AppIcon } from '../../components/brand/EdvantaBrand';
 import { MasteryStatusText, RevisionStatusText, masteryBarColor } from '../../components/StatusIndicator';
 import { apiFetch } from '../../lib/api';
 import { AchievementsPayload, LearningModuleItem, StudentDashboardPayload } from '../../../shared/types';
@@ -54,14 +55,18 @@ export function StudentDashboard() {
   if (loading) {
     return (
       <AppShell title="Dashboard Overview">
-        <div className="space-y-6 animate-pulse">
-          <div className="h-28 rounded-xl bg-white border border-slate-200" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 text-sm text-slate-600">
+            <AppIcon size={32} variant="dark" />
+            <span>Syncing your EDVANTA learner model...</span>
+          </div>
+          <div className="h-28 rounded-xl bg-white border border-slate-200 animate-pulse" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
             {[1, 2, 3, 4].map((n) => (
               <div key={n} className="h-24 rounded-xl bg-white border border-slate-200" />
             ))}
           </div>
-          <div className="h-72 rounded-xl bg-white border border-slate-200" />
+          <div className="h-72 rounded-xl bg-white border border-slate-200 animate-pulse" />
         </div>
       </AppShell>
     );

@@ -22,7 +22,7 @@ const CompanionContext = createContext<CompanionContextValue | undefined>(undefi
 const INITIAL_MESSAGE: CompanionChatMessage = {
   id: 'welcome-volt',
   sender: 'companion',
-  text: "Hi! I'm Volt, your interactive ADAPTIX assistant. Ask me anything about Class 10 Electricity, solve a numerical, check your streak & badges, or ask me to open any module or practice drill!",
+  text: "Hi! I'm Volt, your interactive EDVANTA assistant. Ask me anything about Class 10 Electricity, solve a numerical, check your streak & badges, or ask me to open any module or practice drill!",
   timestamp: new Date().toISOString(),
   source: 'fallback',
   mood: 'idle',

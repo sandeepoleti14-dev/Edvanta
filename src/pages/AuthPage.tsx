@@ -4,6 +4,7 @@ import { ArrowRight, GraduationCap, Users, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { UserRole } from '../../shared/types';
+import { BrandHeader, EdvantaLogo } from '../components/brand/EdvantaBrand';
 
 export function AuthPage() {
   const { login, register, demoLogin } = useAuth();
@@ -73,14 +74,15 @@ export function AuthPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F7FC] flex flex-col">
-      <header className="bg-white border-b border-slate-200 px-4 sm:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="font-display text-xl font-bold tracking-tight text-[#101827]">
-          ADAPTIX
-        </Link>
-        <Link to="/" className="text-sm font-medium text-slate-600 hover:text-[#101827]">
-          Back to overview
-        </Link>
-      </header>
+      <BrandHeader
+        variant="light"
+        sticky={false}
+        rightSlot={
+          <Link to="/" className="text-sm font-medium text-slate-600 hover:text-[#101827] whitespace-nowrap">
+            Back to overview
+          </Link>
+        }
+      />
 
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
@@ -114,7 +116,7 @@ export function AuthPage() {
             </div>
 
             <h1 className="font-display text-2xl font-bold text-[#101827] mt-6">
-              {mode === 'login' ? 'Sign in to ADAPTIX' : 'Create your ADAPTIX account'}
+              {mode === 'login' ? 'Sign in to EDVANTA' : 'Create your EDVANTA account'}
             </h1>
             <p className="text-sm text-slate-600 mt-1">
               {mode === 'login'
@@ -191,7 +193,7 @@ export function AuthPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@adaptix.edu"
+                  placeholder="student@edvanta.edu"
                   className="w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm text-[#101827] focus:border-[#526BFF] focus:outline-none focus:ring-2 focus:ring-[#526BFF]/20"
                   required
                 />
@@ -230,6 +232,7 @@ export function AuthPage() {
           {/* Right: Seeded Demo Access */}
           <div className="md:col-span-5 rounded-xl border border-slate-200 bg-[#101827] text-white p-6 sm:p-8 flex flex-col justify-between">
             <div>
+              <EdvantaLogo variant="dark" size="sm" showTagline className="mb-5" />
               <p className="text-xs font-semibold text-[#8B6CFF]">Instant Evaluation Access</p>
               <h2 className="font-display text-xl font-bold mt-2">
                 Explore seeded demo workspaces

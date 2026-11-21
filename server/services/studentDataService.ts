@@ -303,7 +303,7 @@ export function buildStudentDashboard(user: AuthUser): StudentDashboardPayload {
     recommendedActivity = {
       type: 'diagnostic',
       title: 'Start Electricity Diagnostic Assessment',
-      description: 'Complete 8 baseline questions so ADAPTIX can map your strengths and pinpoint conceptual gaps.',
+      description: 'Complete 8 baseline questions so EDVANTA can map your strengths and pinpoint conceptual gaps.',
       targetPath: '/student/diagnostic',
     };
   } else if (dueRevision) {

@@ -328,7 +328,7 @@ export function PracticePage() {
                     </div>
                     <p className="text-sm text-slate-700">
                       {evaluation.analysis.conceptualError ||
-                        'Write out a sentence explaining your physical reasoning next time so ADAPTIX can diagnose any underlying misconception accurately.'}
+                        'Write out a sentence explaining your physical reasoning next time so EDVANTA can diagnose any underlying misconception accurately.'}
                     </p>
                     <p className="text-sm text-slate-700 pt-2 border-t border-amber-200/70">
                       {evaluation.analysis.correctiveExplanation}

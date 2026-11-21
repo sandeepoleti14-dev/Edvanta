@@ -72,6 +72,181 @@
   animation: volt-sparkle 1.4s ease-out forwards;
 }
 
+@keyframes edvanta-ambient-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes edvanta-particle-float {
+  0%, 100% {
+    opacity: 0.25;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translate3d(var(--dx, 8px), var(--dy, -14px), 0);
+  }
+}
+
+@keyframes edvanta-seed-converge {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--sx, 0px), var(--sy, 0px), 0) scale(0.45);
+  }
+  30% {
+    opacity: 0.95;
+    transform: translate3d(calc(var(--sx, 0px) * 0.45), calc(var(--sy, 0px) * 0.45), 0) scale(1.1);
+  }
+  80% {
+    opacity: 0.85;
+    transform: translate3d(var(--ex, 0px), var(--ey, 0px), 0) scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--ex, 0px), var(--ey, 0px), 0) scale(0.35);
+  }
+}
+
+@keyframes edvanta-draw-left {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+    transform: translate3d(-10px, 8px, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes edvanta-draw-right {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+    transform: translate3d(10px, 8px, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes edvanta-draw-line {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes edvanta-symbol-sweep {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1.2;
+  }
+  25% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: -0.4;
+  }
+}
+
+@keyframes edvanta-node-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes edvanta-apex-drop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0) scale(0.35);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes edvanta-glow-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  45% {
+    opacity: 0.55;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 0.24;
+    transform: scale(1);
+  }
+}
+
+@keyframes edvanta-letter-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes edvanta-wordmark-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-160%, 0, 0) skewX(-16deg);
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(380%, 0, 0) skewX(-16deg);
+  }
+}
+
+@keyframes edvanta-tagline-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

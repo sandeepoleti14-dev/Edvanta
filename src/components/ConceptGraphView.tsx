@@ -123,7 +123,7 @@ export function ConceptGraphView({ concepts, onPracticeConcept }: ConceptGraphVi
             >
               <defs>
                 <marker
-                  id="adaptix-arrow"
+                  id="edvanta-arrow"
                   viewBox="0 0 10 10"
                   refX="8"
                   refY="5"
@@ -134,7 +134,7 @@ export function ConceptGraphView({ concepts, onPracticeConcept }: ConceptGraphVi
                   <path d="M 0 1 L 10 5 L 0 9 z" fill="#94A3B8" />
                 </marker>
                 <marker
-                  id="adaptix-arrow-active"
+                  id="edvanta-arrow-active"
                   viewBox="0 0 10 10"
                   refX="8"
                   refY="5"
@@ -174,7 +174,7 @@ export function ConceptGraphView({ concepts, onPracticeConcept }: ConceptGraphVi
                     fill="none"
                     stroke={isRelated ? '#526BFF' : '#CBD5E1'}
                     strokeWidth={isRelated ? 2.25 : 1.5}
-                    markerEnd={isRelated ? 'url(#adaptix-arrow-active)' : 'url(#adaptix-arrow)'}
+                    markerEnd={isRelated ? 'url(#edvanta-arrow-active)' : 'url(#edvanta-arrow)'}
                   />
                 );
               })}

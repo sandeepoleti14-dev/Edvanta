@@ -544,7 +544,7 @@ export function buildInteractiveFallbackResponse(
 
   const topWeak = [...params.conceptMasteries].sort((a, b) => a.masteryScore - b.masteryScore)[0];
   return {
-    reply: `I can help with your ADAPTIX workspace and Class 10 Electricity! Try asking me things like "What should I study next?", "Solve current for 18V and 6 ohms", "Show my badges and streak", or "Open ${topWeak?.name || "Ohm's Law"} module".`,
+    reply: `I can help with your EDVANTA workspace and Class 10 Electricity! Try asking me things like "What should I study next?", "Solve current for 18V and 6 ohms", "Show my badges and streak", or "Open ${topWeak?.name || "Ohm's Law"} module".`,
     source: 'fallback',
     mood: 'idle',
     actions: topWeak

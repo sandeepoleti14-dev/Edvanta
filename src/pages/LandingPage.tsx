@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { BrandHeader, EdvantaLogo } from '../components/brand/EdvantaBrand';
 
 export function LandingPage() {
   const { user, demoLogin } = useAuth();
@@ -42,15 +43,9 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F5F7FC] text-[#101827] flex flex-col">
       {/* Top Bar Contract: [Brand wordmark] — [4 nav links] — [1 primary CTA] */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between gap-8">
-          <Link
-            to="/"
-            className="font-display text-xl font-bold tracking-tight text-[#101827] whitespace-nowrap shrink-0"
-          >
-            ADAPTIX
-          </Link>
-
+      <BrandHeader
+        variant="light"
+        centerNav={
           <nav aria-label="Primary navigation" className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-[#101827] transition-colors whitespace-nowrap shrink-0">
               How It Works
@@ -65,17 +60,16 @@ export function LandingPage() {
               Live Preview
             </a>
           </nav>
-
-          <div className="shrink-0">
-            <Link
-              to={primaryCtaTarget}
-              className="inline-flex items-center justify-center rounded-lg bg-[#526BFF] hover:bg-[#4158E6] px-4 py-2 text-sm font-medium text-white transition-colors whitespace-nowrap shrink-0"
-            >
-              {user ? 'Open Workspace' : 'Get Started'}
-            </Link>
-          </div>
-        </div>
-      </header>
+        }
+        rightSlot={
+          <Link
+            to={primaryCtaTarget}
+            className="inline-flex items-center justify-center rounded-lg bg-[#526BFF] hover:bg-[#4158E6] px-4 py-2 text-sm font-medium text-white transition-colors whitespace-nowrap shrink-0"
+          >
+            {user ? 'Open Workspace' : 'Get Started'}
+          </Link>
+        }
+      />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -83,16 +77,16 @@ export function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
             <div className="lg:col-span-6 flex flex-col justify-center">
               <p className="text-sm font-medium text-[#526BFF] mb-3">
-                Adaptive Learning Intelligence Platform · Class 10 Physics
+                EDVANTA · Learn Smarter. Grow Further.
               </p>
               <h1
                 className="font-display font-bold tracking-tight text-[#101827] leading-[1.08]"
                 style={{ fontSize: 'clamp(2.25rem, 4vw, 3.5rem)', textWrap: 'balance' }}
               >
-                Learn what you don&apos;t know. Master what you do.
+                Learn Smarter. Master What Matters Most.
               </h1>
               <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
-                Conventional quizzes only count right or wrong answers. ADAPTIX maintains a persistent
+                Conventional quizzes only count right or wrong answers. EDVANTA maintains a persistent
                 concept-by-concept learner model, inspects written student reasoning to uncover hidden
                 misconceptions, and schedules targeted spaced repetition.
               </p>
@@ -144,7 +138,7 @@ export function LandingPage() {
                 {!heroImgError ? (
                   <img
                     src="/src/assets/images/hero_physics_studio_1795247410314.jpg"
-                    alt="Architectural electrical schematic workspace representing ADAPTIX concept mastery mapping"
+                    alt="Architectural electrical schematic workspace representing EDVANTA concept mastery mapping"
                     referrerPolicy="no-referrer"
                     onError={() => setHeroImgError(true)}
                     className="w-full h-64 sm:h-80 lg:h-full object-cover"
@@ -173,7 +167,7 @@ export function LandingPage() {
                 Every concept tracked independently, updated on every explanation
               </h2>
               <p className="text-sm sm:text-base text-slate-600 mt-2">
-                Instead of collapsing a student&apos;s knowledge into a single quiz percentage, ADAPTIX models mastery,
+                Instead of collapsing a student&apos;s knowledge into a single quiz percentage, EDVANTA models mastery,
                 prerequisite readiness, and diagnosed misconceptions across each syllabus concept.
               </p>
             </div>
@@ -318,7 +312,7 @@ export function LandingPage() {
                   Visualize mastery across connected physics principles
                 </h3>
                 <p className="text-sm text-slate-600 mt-1.5">
-                  When a student struggles with Electric Power or Series Circuits, ADAPTIX traces upstream
+                  When a student struggles with Electric Power or Series Circuits, EDVANTA traces upstream
                   prerequisites like Ohm&apos;s Law and Resistance to fix root gaps first.
                 </p>
               </div>
@@ -453,10 +447,17 @@ export function LandingPage() {
 
       <footer className="border-t border-slate-200 bg-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <span className="font-display font-semibold text-[#101827]">
-            ADAPTIX · Adaptive Learning Intelligence Platform
-          </span>
-          <span>Class 10 Physics — Electricity Curriculum</span>
+          <EdvantaLogo variant="light" size="sm" showTagline />
+          <div className="flex items-center gap-5">
+            <span>Class 10 Physics — Electricity Curriculum</span>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('edvanta:replay-intro'))}
+              className="font-medium text-[#526BFF] hover:text-[#4158E6] hover:underline whitespace-nowrap"
+            >
+              Replay Intro
+            </button>
+          </div>
         </div>
       </footer>
     </div>

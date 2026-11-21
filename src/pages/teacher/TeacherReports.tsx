@@ -46,7 +46,7 @@ export function TeacherReports() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'adaptix-class10-electricity-report.csv';
+      link.download = 'edvanta-class10-electricity-report.csv';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

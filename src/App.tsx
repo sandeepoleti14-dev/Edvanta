@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { CompanionProvider } from './context/CompanionContext';
@@ -21,6 +21,13 @@ import { TeacherConcepts } from './pages/teacher/TeacherConcepts';
 import { TeacherMisconceptions } from './pages/teacher/TeacherMisconceptions';
 import { TeacherReports } from './pages/teacher/TeacherReports';
 import { UserRole } from '../shared/types';
+import { AppIcon } from './components/brand/EdvantaBrand';
+import { BrandIntro } from './components/brand/BrandIntro';
+import {
+  markIntroSeenFlag,
+  readIntroSeenFlag,
+  shouldPlayBrandIntro,
+} from './utils/brandIntroLogic';
 
 function ProtectedRoute({
   role,
@@ -33,8 +40,9 @@ function ProtectedRoute({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F7FC] text-sm text-slate-500">
-        Loading workspace...
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#F5F7FC] text-sm text-slate-600">
+        <AppIcon size={44} variant="dark" />
+        <span>Loading EDVANTA workspace...</span>
       </div>
     );
   }
@@ -50,12 +58,63 @@ function ProtectedRoute({
   return <>{children}</>;
 }
 
+function BrandIntroGate() {
+  const location = useLocation();
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [showIntro, setShowIntro] = useState(() => {
+    const reduced =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return shouldPlayBrandIntro({
+      pathname: typeof window !== 'undefined' ? window.location.pathname : '/',
+      search: typeof window !== 'undefined' ? window.location.search : '',
+      hasSeenInSession: readIntroSeenFlag(),
+      prefersReducedMotion: reduced,
+    });
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    const onReplayRequest = () => {
+      setShowIntro(true);
+    };
+    window.addEventListener('edvanta:replay-intro', onReplayRequest);
+    return () => window.removeEventListener('edvanta:replay-intro', onReplayRequest);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('intro') === '1') {
+      setShowIntro(true);
+    }
+  }, [location.search]);
+
+  const handleComplete = useCallback(() => {
+    markIntroSeenFlag();
+    setShowIntro(false);
+  }, []);
+
+  if (!showIntro) return null;
+
+  return <BrandIntro onComplete={handleComplete} reducedMotion={prefersReducedMotion} />;
+}
+
 export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
         <CompanionProvider>
           <BrowserRouter>
+            <BrandIntroGate />
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />

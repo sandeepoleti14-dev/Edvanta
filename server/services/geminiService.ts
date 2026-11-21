@@ -326,7 +326,7 @@ export async function chatWithStudyCompanion(
 Per-Concept Mastery & Formulas:
 ${conceptLines}
 
-Valid ADAPTIX App Routes you may return in recommendedActionRoutes:
+Valid EDVANTA App Routes you may return in recommendedActionRoutes:
 - /student/dashboard (Dashboard Overview)
 - /student/modules (Learning Modules) or /student/modules?conceptSlug=<slug>
 - /student/practice (Adaptive Practice) or /student/practice?conceptId=<id>
@@ -342,7 +342,7 @@ ${recentTurns || '(New conversation)'}
 
 Student's message: "${params.message}"
 
-Respond as Volt, an interactive Class 10 Physics & ADAPTIX app assistant.
+Respond as Volt, an interactive Class 10 Physics & EDVANTA app assistant.
 Rules:
 1. Answer whatever the user asks directly—whether it is a physics question, numerical problem, formula request, progress/streak/badge check, revision question, or navigation command.
 2. Keep the reply crisp (2–4 clear sentences) and mathematically accurate with SI units.
@@ -355,7 +355,7 @@ Rules:
       contents: prompt,
       config: {
         systemInstruction:
-          'You are Volt, an interactive AI study companion inside ADAPTIX for Class 10 Physics (Electricity). Return strictly valid JSON matching the schema.',
+          'You are Volt, an interactive AI study companion inside EDVANTA for Class 10 Physics (Electricity). Return strictly valid JSON matching the schema.',
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,

@@ -305,6 +305,6 @@ teacherRouter.get('/reports/csv', (_req: AuthenticatedRequest, res: Response) =>
   ];
 
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="adaptix-class10-electricity-report.csv"');
+  res.setHeader('Content-Disposition', 'attachment; filename="edvanta-class10-electricity-report.csv"');
   res.send(lines.join('\n'));
 });

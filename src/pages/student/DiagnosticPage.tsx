@@ -132,7 +132,7 @@ export function DiagnosticPage() {
                 Diagnostic Complete — Class 10 Electricity
               </h2>
               <p className="text-sm text-slate-600 mt-1">
-                ADAPTIX evaluated your responses and calibrated mastery across all {result.totalQuestions} core
+                EDVANTA evaluated your responses and calibrated mastery across all {result.totalQuestions} core
                 concepts.
               </p>
             </div>

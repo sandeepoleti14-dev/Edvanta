@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { StudyCompanion } from './StudyCompanion';
+import { EdvantaLogo } from './brand/EdvantaBrand';
 
 interface NavItem {
   label: string;
@@ -73,9 +74,13 @@ export function AppShell({
 
   const sidebarContent = (
     <div className="flex h-full flex-col bg-[#101827] text-slate-200">
-      <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800">
-        <Link to="/" className="font-display text-lg font-bold tracking-tight text-white whitespace-nowrap">
-          ADAPTIX
+      <div className="flex items-center justify-between px-5 py-5 border-b border-slate-800">
+        <Link
+          to="/"
+          aria-label="EDVANTA home"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526BFF] rounded-lg"
+        >
+          <EdvantaLogo variant="dark" size="md" />
         </Link>
         <button
           type="button"
